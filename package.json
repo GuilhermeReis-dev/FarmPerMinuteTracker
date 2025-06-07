@@ -1,6 +1,6 @@
 {
   "name": "electronfarmtracker",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Farm Per Minute Tracker com Electron e Python",
   "main": "main.js",
   "scripts": {

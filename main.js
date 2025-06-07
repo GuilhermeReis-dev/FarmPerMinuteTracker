@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const { autoUpdater } = require('electron-updater');
 const path = require('path');
 const { spawn } = require('child_process');
@@ -38,25 +38,18 @@ function createWindow() {
 function callPythonBackend(action, dataPayload, callback) {
   let backendProcess;
 
-  // --- INÍCIO DA CORREÇÃO ---
-  // Esta nova lógica de caminhos é mais robusta para encontrar o backend.
   if (isDev) {
-    // Modo de Desenvolvimento: Executa o script Python diretamente.
     const pythonExecutable = 'python';
     const scriptPath = path.join(__dirname, 'backend.py');
     backendProcess = spawn(pythonExecutable, [scriptPath], {
       env: { ...process.env, 'PYTHONIOENCODING': 'utf-8' }
     });
   } else {
-    // Modo de Produção: Executa o backend compilado.
-    // O caminho para a pasta 'extraResources' é diferente quando o app está empacotado.
-    // `process.resourcesPath` aponta para a pasta de recursos da aplicação.
     const executablePath = path.join(process.resourcesPath, 'backend.exe');
     backendProcess = spawn(executablePath, [], {
       env: { ...process.env, 'PYTHONIOENCODING': 'utf-8' }
     });
   }
-  // --- FIM DA CORREÇÃO ---
 
   let fullData = '';
   let errorData = '';
@@ -117,7 +110,9 @@ function callPythonBackend(action, dataPayload, callback) {
 app.whenReady().then(() => {
   createWindow();
 
-  autoUpdater.checkForUpdatesAndNotify();
+  // 2. MUDANÇA IMPORTANTE: Mudamos para 'checkForUpdates'
+  // Isto permite-nos controlar o que acontece depois.
+  autoUpdater.checkForUpdates();
 
   callPythonBackend("get_personal_goal", null, (err, data) => {
     if (err) {
@@ -139,6 +134,11 @@ app.on('window-all-closed', function () {
 
 // --- Comunicação IPC ---
 
+// 3. NOVO: Cria um "ouvinte" para quando o frontend pedir a versão.
+ipcMain.handle('get-app-version', () => {
+  return app.getVersion();
+});
+
 ipcMain.handle('call-python', async (event, action, data) => {
   return new Promise((resolve, reject) => {
     callPythonBackend(action, data, (err, result) => {
@@ -152,22 +152,21 @@ ipcMain.handle('call-python', async (event, action, data) => {
   });
 });
 
+// //================================================================//
+// //                LOGS DO AUTO-UPDATER                           //
+// //================================================================//
 autoUpdater.on('checking-for-update', () => {
   console.log('A verificar por atualizações...');
 });
-
 autoUpdater.on('update-available', (info) => {
   console.log('Atualização disponível!', info);
 });
-
 autoUpdater.on('update-not-available', (info) => {
   console.log('Nenhuma atualização disponível.', info);
 });
-
 autoUpdater.on('error', (err) => {
   console.error('Erro no auto-updater: ' + err);
 });
-
 autoUpdater.on('download-progress', (progressObj) => {
   let log_message = "Velocidade de download: " + Math.round(progressObj.bytesPerSecond / 1024) + " KB/s";
   log_message = log_message + ' - Baixado ' + Math.round(progressObj.percent) + '%';
@@ -175,6 +174,20 @@ autoUpdater.on('download-progress', (progressObj) => {
   console.log(log_message);
 });
 
+// 4. MUDANÇA IMPORTANTE: Agora mostramos a nossa própria mensagem.
 autoUpdater.on('update-downloaded', (info) => {
-  console.log('Atualização descarregada. Será instalada na próxima reinicialização.', info);
+  console.log('Atualização descarregada.', info);
+  const dialogOpts = {
+    type: 'info',
+    buttons: ['Reiniciar Agora', 'Mais Tarde'],
+    title: 'Atualização do Aplicativo',
+    message: process.platform === 'win32' ? info.releaseName : info.releaseNotes,
+    detail: 'Uma nova versão foi descarregada. Reinicie o aplicativo para aplicar as atualizações.'
+  };
+
+  dialog.showMessageBox(dialogOpts).then((returnValue) => {
+    if (returnValue.response === 0) { // O índice 0 é o primeiro botão: 'Reiniciar Agora'
+      autoUpdater.quitAndInstall();
+    }
+  });
 });

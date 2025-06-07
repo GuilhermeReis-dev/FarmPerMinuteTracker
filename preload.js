@@ -18,7 +18,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('python-error', listener);
     // return () => { ipcRenderer.removeListener('python-error', listener); };
   },
-  invokePython: (action, data) => ipcRenderer.invoke('call-python', action, data)
+  invokePython: (action, data) => ipcRenderer.invoke('call-python', action, data),
+
+  // NOVO: Adicionada a função para obter a versão
+  getAppVersion: () => ipcRenderer.invoke('get-app-version')
 });
 
-console.log("Preload script carregado e API 'electronAPI' exposta com onInitialData, onPythonError, invokePython.");
+console.log("Preload script carregado e API 'electronAPI' exposta com onInitialData, onPythonError, invokePython e getAppVersion.");

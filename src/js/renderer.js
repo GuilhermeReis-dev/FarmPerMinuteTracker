@@ -12,6 +12,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const helpIconButton = document.getElementById('help-icon-button');
     const closeModalButton = document.querySelector('.close-modal-button');
 
+    // ========================================================== //
+    //           NOVO CÓDIGO PARA EXIBIR A VERSÃO                 //
+    // ========================================================== //
+    const versionElement = document.getElementById('app-version');
+    if (versionElement) {
+        // Usamos a função 'getAppVersion' que expusemos no preload.js
+        window.electronAPI.getAppVersion().then(version => {
+            versionElement.innerText = `v${version}`;
+        });
+    }
+    // ========================================================== //
+
     let isFirstLoad = true;
 
     // 1. Define a página inicial e a exibe.
