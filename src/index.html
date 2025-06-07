@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Farm Per Minute Tracker (Electron)</title>
+    <!-- Adicionando a biblioteca Chart.js para os gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self' https://cdn.jsdelivr.net; script-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;">
+    <link rel="stylesheet" href="assets/css/global.css">
+    <link rel="stylesheet" href="assets/css/gerenciarMetas.css">
+    <link rel="stylesheet" href="assets/css/gameplay.css">
+    <link rel="stylesheet" href="assets/css/historico.css">
+    <link rel="stylesheet" href="assets/css/estatisticas.css">
+</head>
+
+<body>
+    <div id="app-container">
+        <div id="top-bar">
+            <div id="nav-bar-main">
+                <button data-page="GerenciarMetasPage">Gerir Metas</button>
+                <button data-page="GameplayPage">GAMEPLAY</button>
+                <button data-page="HistoricoPartidasPage">Histórico</button>
+                <button data-page="EstatisticasPage">Estatísticas</button>
+            </div>
+            <button id="help-icon-button">?</button>
+        </div>
+
+        <main id="app-content">
+            <!-- ... (O conteúdo das outras páginas permanece o mesmo) ... -->
+            <div id="GerenciarMetasPage-content" class="page-content" style="display: none;">
+                <h2>Gerir Metas</h2>
+                <div class="content-section">
+                    <h3>Minha Meta Pessoal</h3>
+                    <form id="personal-goal-form">
+                        <div class="form-group">
+                            <label for="goal-name">Nome da Meta:</label>
+                            <input type="text" id="goal-name" name="goal-name" value="Minha Meta Pessoal">
+                        </div>
+                        <div class="form-group">
+                            <label>Tempo de Referência:</label>
+                            <input type="number" id="goal-time-min" name="goal-time-min" placeholder="min" min="0">
+                            <span> : </span>
+                            <input type="number" id="goal-time-sec" name="goal-time-sec" placeholder="seg" min="0"
+                                max="59">
+                        </div>
+                        <div class="form-group">
+                            <label for="goal-farm">Farm Total de Referência:</label>
+                            <input type="number" id="goal-farm" name="goal-farm" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label>FPM da Meta Calculado:</label>
+                            <span id="goal-fpm-display" class="fpm-display">N/A</span>
+                        </div>
+                        <div class="form-actions">
+                            <button type="button" id="save-goal-button" class="action-button register-button">Salvar
+                                Meta</button>
+                            <button type="button" id="delete-goal-button" class="action-button danger-button"
+                                disabled>Excluir Meta</button>
+                        </div>
+                        <p id="personal-goal-status" class="status-message"></p>
+                    </form>
+                </div>
+                <hr>
+                <div class="content-section" id="other-profiles-section">
+                    <h3>Metas de Outros Perfis</h3>
+                    <div class="profile-management-area">
+                        <div class="profile-list-column">
+                            <h4>Perfis Salvos (Máx. 3)</h4>
+                            <ul id="other-profiles-list">
+                                <!-- Perfis carregados pelo JS -->
+                            </ul>
+                            <div class="add-profile-form form-group">
+                                <input type="text" id="new-profile-name" placeholder="Nome do Perfil"
+                                    style="flex-grow: 1; margin-right: 10px;">
+                                <button type="button" id="add-profile-button"
+                                    class="action-button register-button">Adicionar Perfil</button>
+                            </div>
+                            <p id="other-profiles-list-status" class="status-message"></p>
+                        </div>
+                        <div class="profile-details-column" id="profile-details-area" style="display: none;">
+                            <h4>Detalhes do Perfil: <span id="selected-profile-name-display"></span></h4>
+                            <hr class="minor-hr">
+                            <h5>Partidas de Exemplo</h5>
+                            <ul id="example-matches-list">
+                                <!-- Partidas carregadas pelo JS -->
+                            </ul>
+                            <div class="fpm-average-display-container">
+                                <label>FPM Médio do Perfil:</label>
+                                <span id="profile-avg-fpm-display" class="fpm-display">N/A</span>
+                                <hr class="minor-hr">
+                            </div>
+                            <div class="example-match-form-group">
+                                <label>Tempo:</label>
+                                <input type="number" id="example-match-min" placeholder="min" min="0">
+                                <span>:</span>
+                                <input type="number" id="example-match-sec" placeholder="seg" min="0" max="59">
+                            </div>
+                            <div class="example-match-form-group">
+                                <label for="example-match-farm">Farm:</label>
+                                <input type="number" id="example-match-farm" placeholder="Farm" min="0">
+                            </div>
+                            <div class="form-actions example-match-actions">
+                                <button type="button" id="add-example-match-button"
+                                    class="action-button register-button">Adicionar Partida</button>
+                                <button type="button" id="edit-example-match-button" class="action-button"
+                                    disabled>Salvar Edição</button>
+                                <button type="button" id="delete-example-match-button"
+                                    class="action-button danger-button" disabled>Excluir Partida</button>
+                                <button type="button" id="clear-example-match-button"
+                                    class="action-button cancel-button">Limpar Campos</button>
+                            </div>
+                            <p id="example-matches-status" class="status-message"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="GameplayPage-content" class="page-content" style="display: none;">
+                <h2>GAMEPLAY</h2>
+                <div class="content-section gameplay-section">
+                    <h3>Cronômetro da Partida</h3>
+                    <div class="timer-display-area">
+                        <span id="timer-display">00:00</span>
+                    </div>
+                    <div class="gameplay-actions">
+                        <button id="start-timer-button" class="action-button">Iniciar</button>
+                        <button id="pause-timer-button" class="action-button" disabled>Pausar</button>
+                        <button id="finalize-timer-button" class="action-button finalize-button"
+                            disabled>Finalizar</button>
+                        <button id="reset-timer-button" class="action-button reset-button">Resetar Cronômetro</button>
+                    </div>
+                </div>
+                <div class="content-section gameplay-section" id="metas-referencia-section" style="display:none;">
+                    <h3>Metas de Referência</h3>
+                    <div class="form-group">
+                        <label for="display-mode-select">Modo Exibição Meta:</label>
+                        <select id="display-mode-select">
+                            <option value="static">Estático (FPM)</option>
+                            <option value="dynamic">Dinâmico (Farm Alvo)</option>
+                        </select>
+                    </div>
+                    <div class="form-group reference-fpm-group">
+                        <label id="minha-meta-label" for="minha-meta-fpm-gameplay">FPM Minha Meta:</label>
+                        <span id="minha-meta-fpm-gameplay" class="fpm-display">N/A</span>
+                    </div>
+                    <div class="form-group reference-fpm-group">
+                        <label id="outro-meta-label" for="outro-perfil-ref-select">FPM Meta Outro:</label>
+                        <select id="outro-perfil-ref-select">
+                            <option value="">Nenhum</option>
+                        </select>
+                        <span id="outro-perfil-fpm-gameplay" class="fpm-display">N/A</span>
+                    </div>
+                    <div class="form-group reference-fpm-group">
+                        <label id="seu-desempenho-label" for="seu-desempenho-select">FPM Pessoal (Hist.):</label>
+                        <select id="seu-desempenho-select">
+                            <option value="">Nenhum histórico</option>
+                        </select>
+                        <span id="seu-desempenho-fpm-gameplay" class="fpm-display">N/A</span>
+                    </div>
+                </div>
+                <div class="content-section gameplay-section" id="post-game-form-area" style="display: none;">
+                    <h3>Registro Pós-Partida</h3>
+                    <div class="form-group time-inputs-group">
+                        <label for="final-time-min">Tempo Total (Final):</label>
+                        <input type="number" id="final-time-min" placeholder="min" min="0">
+                        <span>:</span>
+                        <input type="number" id="final-time-sec" placeholder="seg" min="0" max="59">
+                    </div>
+                    <div class="form-group">
+                        <label for="final-farm">Farm Total Obtido:</label>
+                        <input type="number" id="final-farm" placeholder="Farm" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="final-character">Personagem (Opcional):</label>
+                        <input type="text" id="final-character" placeholder="Ex: Ashe, Garen">
+                    </div>
+                    <div class="form-group">
+                        <label for="final-difficulty">Dificuldade da Partida:</label>
+                        <select id="final-difficulty">
+                            <option value="EASY">Easy</option>
+                            <option value="NORMAL" selected>Normal</option>
+                            <option value="HARD">Hard</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="fpm-partida-atual">FPM desta Partida:</label>
+                        <span id="fpm-partida-atual" class="fpm-display">N/A</span>
+                    </div>
+                    <div class="form-actions gameplay-actions">
+                        <button id="register-match-button" class="action-button register-button">Registrar
+                            Partida</button>
+                        <button id="cancel-continue-button" class="action-button cancel-button">Cancelar e
+                            Continuar</button>
+                    </div>
+                    <p id="post-game-status" class="status-message"></p>
+                </div>
+            </div>
+
+            <div id="HistoricoPartidasPage-content" class="page-content" style="display: none;">
+                <h2>Histórico de Partidas</h2>
+                <div class="content-section" id="manual-add-match-section">
+                    <h3>Adicionar Partida Manualmente</h3>
+                    <form id="manual-match-form">
+                        <div class="form-group">
+                            <label for="manual-time-min">Tempo da Partida:</label>
+                            <input type="number" id="manual-time-min" placeholder="min" min="0">
+                            <span>:</span>
+                            <input type="number" id="manual-time-sec" placeholder="seg" min="0" max="59">
+                        </div>
+                        <div class="form-group">
+                            <label for="manual-farm">Farm Total Obtido:</label>
+                            <input type="number" id="manual-farm" placeholder="Farm" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label for="manual-character">Personagem (Opcional):</label>
+                            <input type="text" id="manual-character" placeholder="Ex: Abrams">
+                        </div>
+                        <div class="form-group">
+                            <label for="manual-difficulty">Dificuldade:</label>
+                            <select id="manual-difficulty">
+                                <option value="EASY">Easy</option>
+                                <option value="NORMAL">Normal</option>
+                                <option value="HARD">Hard</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>FPM Calculado:</label>
+                            <span id="manual-fpm-display" class="fpm-display">N/A</span>
+                        </div>
+                        <div class="form-actions">
+                            <button type="button" id="save-manual-match-button"
+                                class="action-button register-button">Salvar Partida Manual</button>
+                        </div>
+                        <p id="manual-match-status" class="status-message"></p>
+                    </form>
+                </div>
+                <div class="content-section" id="match-history-list-section">
+                    <h3>Histórico Registrado</h3>
+                    <div class="history-actions">
+                        <button id="refresh-history-button" class="action-button">Atualizar Lista</button>
+                        <button id="edit-history-entry-button" class="action-button" disabled>Editar
+                            Selecionada</button>
+                        <button id="delete-history-entry-button" class="action-button danger-button" disabled>Excluir
+                            Selecionada</button>
+                    </div>
+                    <div class="table-container">
+                        <table id="match-history-table">
+                            <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Duração</th>
+                                    <th>Farm</th>
+                                    <th>FPM</th>
+                                    <th>Origem</th>
+                                    <th>Dificuldade</th>
+                                    <th>Personagem</th>
+                                </tr>
+                            </thead>
+                            <tbody id="match-history-tbody">
+                            </tbody>
+                        </table>
+                    </div>
+                    <p id="match-history-status" class="status-message"></p>
+                </div>
+                <div id="edit-match-modal" class="modal" style="display: none;">
+                    <div class="modal-content">
+                        <span class="close-modal-button" id="close-edit-modal-button">×</span>
+                        <h3>Editar Partida <span id="edit-match-id-display"></span></h3>
+                        <form id="edit-match-form">
+                            <input type="hidden" id="edit-match-id">
+                            <div class="form-group">
+                                <label for="edit-time-min">Tempo da Partida:</label>
+                                <input type="number" id="edit-time-min" placeholder="min" min="0">
+                                <span>:</span>
+                                <input type="number" id="edit-time-sec" placeholder="seg" min="0" max="59">
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-farm">Farm Total Obtido:</label>
+                                <input type="number" id="edit-farm" placeholder="Farm" min="0">
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-character">Personagem (Opcional):</label>
+                                <input type="text" id="edit-character" placeholder="Ex: Ashe">
+                            </div>
+                            <div class="form-group">
+                                <label for="edit-difficulty">Dificuldade:</label>
+                                <select id="edit-difficulty">
+                                    <option value="EASY">Easy</option>
+                                    <option value="NORMAL">Normal</option>
+                                    <option value="HARD">Hard</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>FPM (Pré-calculado):</label>
+                                <span id="edit-fpm-display" class="fpm-display">N/A</span>
+                            </div>
+                            <div class="form-actions">
+                                <button type="button" id="save-edited-match-button"
+                                    class="action-button register-button">Salvar Edições</button>
+                                <button type="button" id="cancel-edit-match-button"
+                                    class="action-button cancel-button">Cancelar</button>
+                            </div>
+                            <p id="edit-match-status" class="status-message"></p>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Conteúdo da Página de Estatísticas -->
+            <div id="EstatisticasPage-content" class="page-content" style="display: none;">
+                <h2>Estatísticas</h2>
+
+                <div class="content-section">
+                    <div class="history-actions">
+                        <button id="refresh-stats-button" class="action-button">Atualizar Estatísticas</button>
+                    </div>
+
+                    <!-- Cards de Destaque -->
+                    <h3 class="stats-header">Destaques Gerais</h3>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-card-label">Personagem Mais Jogado</div>
+                            <div id="stat-top-char" class="stat-card-value no-data">N/A</div>
+                        </div>
+                    </div>
+
+                    <!-- Cards de Média -->
+                    <h3 class="stats-header">Médias de FPM</h3>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-card-label">Média FPM (Geral)</div>
+                            <div id="stat-geral-value" class="stat-card-value no-data">N/A</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-card-label">Média FPM (Easy)</div>
+                            <div id="stat-facil-value" class="stat-card-value no-data">N/A</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-card-label">Média FPM (Normal)</div>
+                            <div id="stat-normal-value" class="stat-card-value no-data">N/A</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-card-label">Média FPM (Hard)</div>
+                            <div id="stat-dificil-value" class="stat-card-value no-data">N/A</div>
+                        </div>
+                    </div>
+
+                    <!-- SEÇÃO DE FILTROS -->
+                    <div class="stats-filters-section">
+                        <h3 class="stats-header">Filtros e Comparações</h3>
+                        <div class="filter-controls">
+                            <div class="filter-group">
+                                <label for="character-filter-select">Filtrar por Personagem:</label>
+                                <select id="character-filter-select">
+                                    <option value="all">Todos os Personagens</option>
+                                    <!-- Opções populadas pelo JavaScript -->
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Gráfico -->
+                    <h3 class="stats-header">Evolução do FPM (Últimas 15 Partidas)</h3>
+                    <div class="chart-container">
+                        <canvas id="fpm-evolution-chart"></canvas>
+                    </div>
+
+                    <p id="stats-status" class="status-message"></p>
+                </div>
+            </div>
+
+            <!-- ... (O resto do arquivo permanece o mesmo) ... -->
+            <div id="python-error-display" class="output-container error global-error" style="display: none;"></div>
+        </main>
+        <div id="floating-warning-message" class="floating-message warning-message" style="display: none;"></div>
+        <div id="tutorial-modal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <span class="close-modal-button">×</span>
+                <h2>Bem-vindo ao Tutorial!</h2>
+                <div class="content-section tutorial-text modal-tutorial-content">
+                    <p>Este aplicativo ajuda você a calcular, acompanhar e analisar seu Farm por Minuto (FPM).</p>
+                    <h4>Principais Secções:</h4>
+                    <ul>
+                        <li><strong>Gerir Metas:</strong> Defina sua meta de FPM pessoal e compare com outros perfis.
+                        </li>
+                        <li><strong>GAMEPLAY:</strong> Cronometre suas partidas e registre seu farm para análise.</li>
+                        <li><strong>Histórico de Partidas:</strong> Adicione partidas antigas ou de outras fontes e
+                            visualize todo o seu histórico.</li>
+                        <li><strong>Estatísticas:</strong> Visualize seu histórico de FPM, médias e comparações.</li>
+                    </ul>
+                    <p>Seus dados são salvos localmente. Você não precisa interagir diretamente com o arquivo da base de
+                        dados.</p>
+                    <p>Clique nos botões na barra superior para navegar entre as secções ou no "?" para esta ajuda.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script type="module" src="js/renderer.js"></script>
+</body>
+
+</html>

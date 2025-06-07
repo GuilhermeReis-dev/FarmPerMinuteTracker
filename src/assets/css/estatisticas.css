@@ -1,0 +1,103 @@
+/* Estilos para a página de estatísticas */
+
+.stats-header {
+    text-align: left;
+    color: #4FC3F7;
+    margin-top: 30px;
+    margin-bottom: 10px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid #444;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    padding: 10px 0;
+}
+
+.stat-card {
+    background-color: #2D2D2D;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+    border: 1px solid #444;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 120px;
+}
+
+.stat-card-label {
+    font-size: 1.1em;
+    color: #82B1FF;
+    margin-bottom: 15px;
+    font-weight: bold;
+}
+
+.stat-card-value {
+    font-size: 2.2em;
+    font-weight: bold;
+    color: #AED581;
+    word-break: break-all;
+}
+
+.stat-card-value.no-data {
+    font-size: 1.5em;
+    color: #757575;
+}
+
+.stat-card-value.small-text {
+    font-size: 1.4em;
+    color: #E0E0E0;
+    word-break: break-word;
+}
+
+.chart-container {
+    margin-top: 15px;
+    padding: 20px;
+    background-color: #2D2D2D;
+    border-radius: 8px;
+    border: 1px solid #444;
+    height: 350px;
+    position: relative;
+}
+
+#stats-status {
+    text-align: center;
+    margin-top: 20px;
+}
+
+/* --- NOVOS ESTILOS PARA FILTROS --- */
+.stats-filters-section {
+    margin-top: 20px;
+}
+
+.filter-controls {
+    display: flex;
+    gap: 30px;
+    /* Espaço entre os grupos de filtro */
+    align-items: center;
+    flex-wrap: wrap;
+    padding: 10px 0;
+}
+
+.filter-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    /* Espaço entre o label e o select */
+}
+
+.filter-group label {
+    font-size: 1em;
+    color: #C0C0C0;
+    font-weight: bold;
+}
+
+.filter-group select {
+    min-width: 200px;
+    /* Estilos base de select já estão em global.css */
+}

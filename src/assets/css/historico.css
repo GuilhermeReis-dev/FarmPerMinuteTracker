@@ -1,0 +1,185 @@
+/* src/assets/css/historico.css */
+
+#HistoricoPartidasPage-content .content-section {
+    margin-bottom: 25px;
+}
+
+#HistoricoPartidasPage-content h3 {
+    text-align: left;
+    margin-bottom: 15px;
+    border-bottom: 1px solid #444;
+    padding-bottom: 8px;
+}
+
+/* Formulário de Adição Manual e Edição */
+#manual-add-match-section .form-group,
+#edit-match-modal .form-group {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+#manual-add-match-section .form-group label,
+#edit-match-modal .form-group label {
+    min-width: 170px;
+    /* Ajuste conforme necessário */
+    margin-right: 10px;
+    text-align: left;
+    color: #B0B0B0;
+    font-size: 0.95em;
+}
+
+#manual-add-match-section .form-group input[type="number"],
+#manual-add-match-section .form-group input[type="text"],
+#manual-add-match-section .form-group select,
+#edit-match-modal .form-group input[type="number"],
+#edit-match-modal .form-group input[type="text"],
+#edit-match-modal .form-group select {
+    background-color: #3C3F41;
+    color: #F0F0F0;
+    border: 1px solid #555;
+    padding: 8px 10px;
+    border-radius: 4px;
+    font-size: 0.95em;
+    flex-grow: 1;
+    max-width: 280px;
+    /* Ajuste conforme necessário */
+}
+
+#manual-add-match-section .form-group input[type="number"],
+#edit-match-modal .form-group input[type="number"] {
+    width: 70px;
+    /* Largura específica para min/seg/farm */
+    flex-grow: 0;
+}
+
+
+#manual-add-match-section .form-group select,
+#edit-match-modal .form-group select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23F0F0F0'%3e%3cpath d='M7 10l5 5 5-5H7z'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 1.2em;
+    padding-right: 30px;
+}
+
+#manual-add-match-section .form-actions,
+#edit-match-modal .form-actions {
+    margin-top: 20px;
+    display: flex;
+    gap: 10px;
+}
+
+/* Seção da Lista de Histórico */
+.history-actions {
+    margin-bottom: 15px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.history-actions button {
+    padding: 8px 12px;
+    /* Padding menor para botões de ação da tabela */
+}
+
+.table-container {
+    max-height: 400px;
+    /* Altura máxima para a tabela, com scroll */
+    overflow-y: auto;
+    border: 1px solid #444;
+    border-radius: 4px;
+}
+
+#match-history-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9em;
+}
+
+#match-history-table th,
+#match-history-table td {
+    border: 1px solid #3a3a3a;
+    padding: 8px 10px;
+    text-align: left;
+}
+
+#match-history-table thead th {
+    background-color: #252526;
+    color: #E0E0E0;
+    position: sticky;
+    /* Cabeçalho fixo ao rolar */
+    top: 0;
+    z-index: 1;
+}
+
+#match-history-table tbody tr:nth-child(odd) {
+    background-color: #2D2D2D;
+}
+
+#match-history-table tbody tr:nth-child(even) {
+    background-color: #3C3F41;
+}
+
+#match-history-table tbody tr:hover {
+    background-color: #4a4a4a;
+    cursor: pointer;
+}
+
+#match-history-table tbody tr.selected {
+    background-color: #007ACC;
+    color: white;
+}
+
+#match-history-table td {
+    color: #CCCCCC;
+}
+
+#match-history-table tbody tr.selected td {
+    color: white;
+}
+
+
+/* Modal de Edição */
+#edit-match-modal .modal-content {
+    width: 90%;
+    max-width: 550px;
+    /* Largura do modal de edição */
+}
+
+#edit-match-modal h3 {
+    text-align: center;
+    margin-top: 0;
+    margin-bottom: 20px;
+}
+
+#edit-match-id-display {
+    font-weight: normal;
+    color: #82B1FF;
+}
+
+/* Responsividade para a tabela */
+@media (max-width: 768px) {
+    #match-history-table {
+        font-size: 0.85em;
+    }
+
+    #match-history-table th,
+    #match-history-table td {
+        padding: 6px 8px;
+    }
+
+    /* Esconder colunas menos importantes em telas pequenas, se necessário */
+    #match-history-table th:nth-child(1),
+    /* ID */
+    #match-history-table td:nth-child(1),
+    #match-history-table th:nth-child(6),
+    /* Origem */
+    #match-history-table td:nth-child(6) {
+        /* display: none; */
+        /* Descomente para esconder */
+    }
+}

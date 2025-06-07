@@ -1,0 +1,41 @@
+{
+  "name": "electronfarmtracker",
+  "version": "1.0.0",
+  "description": "Farm Per Minute Tracker com Electron e Python",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "pack": "node_modules\\.bin\\electron-builder.cmd",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Guilherme",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^31.0.2",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.seuautor.electronfarmtracker",
+    "productName": "Farm Per Minute Tracker",
+    "icon": "img/icon.ico",
+    "extraResources": [
+      {
+        "from": "dist/backend.exe",
+        "to": "backend.exe"
+      }
+    ],
+    "win": {
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "img/icon.ico",
+      "uninstallerIcon": "img/icon.ico",
+      "installerHeader": "img/installerHeader.bmp",
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
+  }
+}

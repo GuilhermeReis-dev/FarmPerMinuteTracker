@@ -1,0 +1,225 @@
+/* src/assets/css/gameplay.css */
+
+/* Estilos para a página de Gameplay */
+#GameplayPage-content .content-section {
+    margin-bottom: 25px;
+}
+
+/* Seção do Cronômetro */
+.gameplay-section h3 {
+    text-align: left;
+    margin-bottom: 15px;
+    border-bottom: 1px solid #444;
+    padding-bottom: 8px;
+}
+
+.timer-display-area {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+#timer-display {
+    font-size: 3.5em;
+    color: #E0E0E0;
+    font-weight: bold;
+    padding: 10px 20px;
+    background-color: #1c1c1c;
+    border-radius: 6px;
+    display: inline-block;
+    min-width: 200px;
+}
+
+.gameplay-actions {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+}
+
+.gameplay-actions button {
+    padding: 12px 20px;
+    font-size: 1em;
+    min-width: 140px;
+    text-align: center;
+}
+
+/* Seção de Metas de Referência e Formulário Pós-Partida */
+#GameplayPage-content .form-group {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px; /* Aumentado o espaçamento inferior */
+    flex-wrap: nowrap;
+}
+
+#GameplayPage-content .form-group label {
+    min-width: 190px; /* Aumentado para dar mais espaço ao texto do label */
+    margin-right: 10px;
+    text-align: left;
+    color: #C0C0C0; /* Cor um pouco mais clara para o label */
+    font-size: 1.0em;  /* Aumentado o tamanho da fonte do label */
+}
+
+/* Estilização dos SELECTS para tema escuro */
+#GameplayPage-content .form-group select {
+    background-color: #3C3F41; /* Cor de fundo escura */
+    color: #F0F0F0; /* Cor do texto clara */
+    border: 1px solid #555; /* Borda sutil */
+    padding: 9px 10px; /* Padding interno (vertical, horizontal) */
+    border-radius: 4px; /* Cantos arredondados */
+    font-size: 0.98em; /* Tamanho da fonte dentro do select */
+    flex-grow: 1;
+    max-width: 280px; /* Aumentada a largura máxima */
+    appearance: none; /* Remove a aparência padrão do sistema */
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    /* Adiciona uma seta personalizada (SVG embutido) */
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23F0F0F0'%3e%3cpath d='M7 10l5 5 5-5H7z'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 1.2em; /* Tamanho da seta */
+    padding-right: 30px; /* Espaço para a seta personalizada */
+}
+
+/* Estilo para quando o select está focado */
+#GameplayPage-content .form-group select:focus {
+    outline: none;
+    border-color: #007ACC; /* Cor da borda ao focar, igual aos inputs */
+    box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.3); /* Sombra sutil ao focar */
+}
+
+
+#GameplayPage-content .form-group input[type="text"],
+#GameplayPage-content .form-group input[type="number"] {
+    flex-grow: 1;
+    max-width: 250px;
+    padding: 8px 10px;
+    font-size: 0.95em;
+    /* Os estilos base para input já estão no global.css, aqui apenas ajustes se necessário */
+}
+
+#GameplayPage-content #post-game-form-area .form-group input[type="number"] {
+    width: 70px;
+    flex-grow: 0;
+    max-width: 70px;
+}
+
+#GameplayPage-content .fpm-display {
+    font-weight: bold;
+    color: #AED581;
+    font-size: 1.05em; /* Aumentado o tamanho da fonte do FPM */
+    margin-left: 15px; /* Aumentado o espaço à esquerda */
+    white-space: nowrap; /* Impede que o texto do FPM quebre linha */
+}
+
+#GameplayPage-content .fpm-display.dynamic-farm-target {
+    color: #81C784;
+}
+
+#GameplayPage-content .form-group.reference-fpm-group {
+    display: flex;
+    align-items: center;
+}
+
+/* Não é mais necessário controlar o tamanho do select aqui, pois o estilo geral do select já faz isso.
+   Se precisar de ajuste fino para selects específicos dentro deste grupo, pode adicionar aqui. */
+/*
+#GameplayPage-content .form-group.reference-fpm-group select {
+    flex-grow: 0;
+    width: auto;
+    min-width: 150px;
+    max-width: 220px;
+}
+*/
+
+/* Estilos para o formulário pós-partida */
+#post-game-form-area {
+    margin-top: 30px;
+    border-top: 1px solid #444;
+    padding-top: 20px;
+}
+
+#post-game-form-area .form-actions {
+    justify-content: flex-start;
+    margin-top: 20px;
+}
+
+#fpm-partida-atual {
+    font-size: 1.1em;
+}
+
+/* Adiciona um pouco de responsividade simples */
+@media (max-width: 768px) {
+    .gameplay-actions button {
+        min-width: 120px;
+        padding: 10px 15px;
+    }
+
+    #GameplayPage-content .form-group label {
+        min-width: 160px; /* Ajustado */
+        font-size: 0.95em; /* Ajustado */
+    }
+    #GameplayPage-content .form-group select {
+        font-size: 0.92em; /* Ajustado */
+        max-width: 220px; /* Ajustado */
+    }
+     #GameplayPage-content .fpm-display {
+        font-size: 1.0em; /* Ajustado */
+    }
+
+    #timer-display {
+        font-size: 2.8em;
+        min-width: 160px;
+    }
+}
+
+@media (max-width: 480px) {
+    #GameplayPage-content .form-group {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    #GameplayPage-content .form-group label {
+        margin-bottom: 5px;
+        min-width: auto;
+    }
+
+    #GameplayPage-content .form-group select,
+    #GameplayPage-content .form-group input[type="text"],
+    #GameplayPage-content .form-group input[type="number"] {
+        max-width: 100%;
+        width: 100%;
+    }
+    /* Garante que a seta personalizada ainda tenha espaço no select em telas pequenas */
+    #GameplayPage-content .form-group select {
+        padding-right: 30px;
+    }
+
+
+    #GameplayPage-content #post-game-form-area .form-group.time-inputs-group {
+        flex-direction: row;
+        align-items: center;
+    }
+    #GameplayPage-content #post-game-form-area .form-group.time-inputs-group input[type="number"] {
+        width: 60px;
+        max-width: 60px;
+    }
+    #GameplayPage-content #post-game-form-area .form-group.time-inputs-group span {
+        margin-left: 5px;
+        margin-right: 5px;
+    }
+
+    .gameplay-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .gameplay-actions button {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+    #post-game-form-area .form-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}

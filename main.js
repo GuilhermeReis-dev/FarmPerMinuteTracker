@@ -1,0 +1,150 @@
+const { app, BrowserWindow, ipcMain } = require('electron');
+const path = require('path');
+const { spawn } = require('child_process');
+
+let mainWindow;
+let initialDataForRenderer = null;
+
+const isDev = !app.isPackaged;
+
+/**
+ * Cria a janela principal do aplicativo.
+ */
+function createWindow() {
+  mainWindow = new BrowserWindow({
+    width: 1050,
+    height: 800,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false
+    }
+  });
+
+  mainWindow.loadFile(path.join(__dirname, 'src', 'index.html'));
+
+  mainWindow.webContents.on('did-finish-load', () => {
+    if (initialDataForRenderer && mainWindow && !mainWindow.webContents.isDestroyed()) {
+      mainWindow.webContents.send('initial-data', initialDataForRenderer);
+      initialDataForRenderer = null;
+    }
+  });
+}
+
+/**
+ * Chama o script Python do backend com uma ação e dados específicos.
+ */
+function callPythonBackend(action, dataPayload, callback) {
+  let backendProcess;
+
+  // --- INÍCIO DA CORREÇÃO ---
+  // Esta nova lógica de caminhos é mais robusta para encontrar o backend.
+  if (isDev) {
+    // Modo de Desenvolvimento: Executa o script Python diretamente.
+    const pythonExecutable = 'python';
+    const scriptPath = path.join(__dirname, 'backend.py');
+    backendProcess = spawn(pythonExecutable, [scriptPath], {
+      env: { ...process.env, 'PYTHONIOENCODING': 'utf-8' }
+    });
+  } else {
+    // Modo de Produção: Executa o backend compilado.
+    // O caminho para a pasta 'extraResources' é diferente quando o app está empacotado.
+    // `process.resourcesPath` aponta para a pasta de recursos da aplicação.
+    const executablePath = path.join(process.resourcesPath, 'backend.exe');
+    backendProcess = spawn(executablePath, [], {
+      env: { ...process.env, 'PYTHONIOENCODING': 'utf-8' }
+    });
+  }
+  // --- FIM DA CORREÇÃO ---
+
+  let fullData = '';
+  let errorData = '';
+
+  if (action) {
+    const command = { action: action, payload: dataPayload || {} };
+    try {
+      backendProcess.stdin.write(JSON.stringify(command));
+      backendProcess.stdin.end();
+    } catch (e) {
+      console.error('[main.js] Erro ao escrever para stdin do Python:', e);
+      if (callback) callback(e, null);
+      return;
+    }
+  } else {
+    backendProcess.stdin.end();
+  }
+
+  backendProcess.stdout.on('data', (data) => {
+    fullData += data.toString();
+  });
+
+  backendProcess.stderr.on('data', (data) => {
+    errorData += data.toString();
+  });
+
+  backendProcess.on('close', (code) => {
+    if (errorData.trim()) {
+      console.error(`[main.js] Python stderr: "${errorData.trim()}"`);
+    }
+
+    if (code === 0 && fullData.trim()) {
+      try {
+        const jsonData = JSON.parse(fullData.trim());
+        if (callback) callback(null, jsonData);
+      } catch (error) {
+        const parseErrorMsg = `ERRO ao fazer parse do JSON do Python: ${error.message}. Dados brutos: "${fullData.trim()}"`;
+        console.error(`[main.js] ${parseErrorMsg}`);
+        if (callback) callback(new Error(parseErrorMsg), null);
+      }
+    } else if (code !== 0) {
+      const errorMsg = `Processo Python terminou com erro (código ${code}). Stderr: ${errorData.trim()}`;
+      console.error(`[main.js] ${errorMsg}`);
+      if (callback) callback(new Error(errorMsg), null);
+    } else if (!fullData.trim() && callback) {
+      callback(null, { message: "Python executou sem output." });
+    }
+  });
+
+  backendProcess.on('error', (err) => {
+    console.error('[main.js] Falha ao iniciar o processo Python:', err);
+    if (callback) callback(err, null);
+  });
+}
+
+// --- Ciclo de Vida do Aplicativo Electron ---
+
+app.whenReady().then(() => {
+  createWindow();
+
+  callPythonBackend("get_personal_goal", null, (err, data) => {
+    if (err) {
+      console.error("[main.js] Erro ao chamar backend para dados iniciais:", err.message);
+      initialDataForRenderer = { error: `Erro ao carregar dados iniciais: ${err.message}`, success: false };
+    } else {
+      initialDataForRenderer = data;
+    }
+  });
+
+  app.on('activate', function () {
+    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+  });
+});
+
+app.on('window-all-closed', function () {
+  if (process.platform !== 'darwin') app.quit();
+});
+
+// --- Comunicação IPC ---
+
+ipcMain.handle('call-python', async (event, action, data) => {
+  return new Promise((resolve, reject) => {
+    callPythonBackend(action, data, (err, result) => {
+      if (err) {
+        console.error(`[main.js] Erro na chamada Python para action ${action}:`, err.message);
+        reject({ success: false, message: err.message || "Erro desconhecido na comunicação com o backend." });
+      } else {
+        resolve(result);
+      }
+    });
+  });
+});
