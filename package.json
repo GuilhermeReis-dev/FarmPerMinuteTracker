@@ -5,7 +5,7 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "pack": "node_modules\\.bin\\electron-builder.cmd",
+    "pack": "rimraf dist && electron-builder",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -13,7 +13,8 @@
   "license": "ISC",
   "devDependencies": {
     "electron": "^31.0.2",
-    "electron-builder": "^24.13.3"
+    "electron-builder": "^24.13.3",
+    "rimraf": "^6.0.1"
   },
   "dependencies": {
     "electron-updater": "^6.6.2"
