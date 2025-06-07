@@ -1,6 +1,6 @@
 {
   "name": "electronfarmtracker",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Farm Per Minute Tracker com Electron e Python",
   "main": "main.js",
   "scripts": {
@@ -9,15 +9,19 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
-  "author": "Guilherme",
+  "author": "Guilherme Reis",
   "license": "ISC",
   "devDependencies": {
     "electron": "^31.0.2",
     "electron-builder": "^24.13.3"
   },
+  "dependencies": {
+    "electron-updater": "^6.6.2"
+  },
   "build": {
-    "appId": "com.seuautor.electronfarmtracker",
+    "appId": "com.guilhermereis.electronfarmtracker",
     "productName": "Farm Per Minute Tracker",
+    "copyright": "Copyright © 2025 Guilherme Reis",
     "icon": "img/icon.ico",
     "extraResources": [
       {
@@ -36,6 +40,11 @@
       "installerHeader": "img/installerHeader.bmp",
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "GuilhermeReis-dev",
+      "repo": "FarmPerMinuteTracker"
     }
   }
 }

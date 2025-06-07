@@ -1,4 +1,5 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
+const { autoUpdater } = require('electron-updater');
 const path = require('path');
 const { spawn } = require('child_process');
 
@@ -116,6 +117,8 @@ function callPythonBackend(action, dataPayload, callback) {
 app.whenReady().then(() => {
   createWindow();
 
+  autoUpdater.checkForUpdatesAndNotify();
+
   callPythonBackend("get_personal_goal", null, (err, data) => {
     if (err) {
       console.error("[main.js] Erro ao chamar backend para dados iniciais:", err.message);
@@ -147,4 +150,31 @@ ipcMain.handle('call-python', async (event, action, data) => {
       }
     });
   });
+});
+
+autoUpdater.on('checking-for-update', () => {
+  console.log('A verificar por atualizações...');
+});
+
+autoUpdater.on('update-available', (info) => {
+  console.log('Atualização disponível!', info);
+});
+
+autoUpdater.on('update-not-available', (info) => {
+  console.log('Nenhuma atualização disponível.', info);
+});
+
+autoUpdater.on('error', (err) => {
+  console.error('Erro no auto-updater: ' + err);
+});
+
+autoUpdater.on('download-progress', (progressObj) => {
+  let log_message = "Velocidade de download: " + Math.round(progressObj.bytesPerSecond / 1024) + " KB/s";
+  log_message = log_message + ' - Baixado ' + Math.round(progressObj.percent) + '%';
+  log_message = log_message + ' (' + Math.round(progressObj.transferred / 1048576) + "/" + Math.round(progressObj.total / 1048576) + ' MB)';
+  console.log(log_message);
+});
+
+autoUpdater.on('update-downloaded', (info) => {
+  console.log('Atualização descarregada. Será instalada na próxima reinicialização.', info);
 });
