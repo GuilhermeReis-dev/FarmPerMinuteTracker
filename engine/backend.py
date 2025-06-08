@@ -531,7 +531,7 @@ def process_request(action=None, data_payload=None):
     """Processa uma requisição vinda do main.js, chamando a função de lógica apropriada."""
     conn = None
     try:
-        conn = setup_database() # Modificado para não precisar passar o caminho
+        conn = setup_database()
 
         action_map = {
             "get_personal_goal": get_personal_goal_logic,
@@ -555,28 +555,39 @@ def process_request(action=None, data_payload=None):
             "get_filtered_stats": get_filtered_stats_logic,
             "get_all_characters": get_all_characters_logic
         }
+        
+        # Lista de ações que NÃO recebem o segundo argumento (payload)
+        actions_without_payload = [
+            "get_personal_goal",
+            "get_other_profiles",
+            "get_historical_fpm_summary",
+            "get_match_history",
+            "get_all_characters"
+        ]
 
         logic_function = action_map.get(action)
+
         if logic_function:
-            # Simplificado: passa o payload para todas as funções que podem precisar dele.
-            if data_payload is not None:
-                 return logic_function(conn, data_payload)
+            if action in actions_without_payload:
+                # Chama a função sem o payload, pois ela não espera um
+                return logic_function(conn)
             else:
-                 return logic_function(conn)
+                # Chama a função com o payload
+                return logic_function(conn, data_payload or {})
         else:
+            # Ação padrão ou desconhecida
             return get_personal_goal_logic(conn)
 
     except Exception as e:
         print(f"Erro no process_request: {e}", file=sys.stderr)
-        return {"error": str(e), "db_path_error": str(DATABASE_PATH), "success": False}
+        # Retorna a chave "message" para ser consistente com o que o frontend espera
+        return {"message": str(e), "db_path_error": str(DATABASE_PATH), "success": False}
     finally:
         if conn: conn.close()
 
 # --- PONTO DE ENTRADA DO SCRIPT ---
 
 if __name__ == "__main__":
-    # Esta inicialização de BD aqui não é estritamente necessária
-    # se toda chamada passa por process_request, mas não prejudica.
     setup_database()
 
     input_str = sys.stdin.read()
