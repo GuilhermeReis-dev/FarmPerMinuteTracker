@@ -1,11 +1,24 @@
 const { app, BrowserWindow, ipcMain, dialog, globalShortcut, Menu } = require('electron');
 const { autoUpdater } = require('electron-updater');
 const path = require('path');
+const fs = require('fs'); // Importa o módulo de arquivos do Node.js
 const { spawn } = require('child_process');
 
 let mainWindow;
 let initialDataForRenderer = null;
 
+// --- INÍCIO DA PARTE DO MODO DETETIVE ---
+// Define um caminho seguro para o nosso log de erros do backend
+// app.getPath('userData') pega a pasta de dados do seu app (ex: %APPDATA%\Farm Per Minute Tracker)
+const userDataPath = app.isReady ? app.getPath('userData') : path.join(process.env.APPDATA, 'Farm Per Minute Tracker');
+if (!fs.existsSync(userDataPath)) {
+  fs.mkdirSync(userDataPath, { recursive: true });
+}
+const backendErrorLogPath = path.join(userDataPath, 'backend_error.log');
+// --- FIM DA PARTE DO MODO DETETIVE ---
+
+
+// A flag isDev não é mais necessária para o caminho do arquivo, mas é útil para outras coisas
 const isDev = !app.isPackaged;
 
 function createWindow() {
@@ -14,8 +27,8 @@ function createWindow() {
     height: 800,
     frame: false,
     webPreferences: {
-      devTools: false, // Desativado para a versão de produção
-      preload: path.join(__dirname, 'preload.js'),
+      devTools: true, // Deixaremos o DevTools ATIVADO para depuração
+      preload: path.join(__dirname, 'preload.js'), // Este caminho é relativo ao __dirname e está correto
       contextIsolation: true,
       nodeIntegration: false
     }
@@ -35,8 +48,8 @@ function createWindow() {
     mainWindow.webContents.send('window-state-changed', { maximized: false });
   });
 
-  // A linha abaixo foi comentada para não abrir o console para o usuário final.
-  // mainWindow.webContents.openDevTools();
+  // Abre o DevTools para vermos erros do frontend também
+  mainWindow.webContents.openDevTools();
 
   mainWindow.webContents.on('did-finish-load', () => {
     Menu.setApplicationMenu(null);
@@ -57,6 +70,7 @@ function callPythonBackend(action, dataPayload, callback) {
       env: { ...process.env, PYTHONIOENCODING: 'utf-8' }
     });
   } else {
+    // Na versão de produção, o backend.exe está na raiz dos recursos
     const executablePath = path.join(process.resourcesPath, 'backend.exe');
     backendProcess = spawn(executablePath, [], {
       env: { ...process.env, PYTHONIOENCODING: 'utf-8' }
@@ -84,8 +98,17 @@ function callPythonBackend(action, dataPayload, callback) {
     fullData += data.toString();
   });
 
+  // --- MUDANÇA PRINCIPAL (MODO DETETIVE) ---
+  // Captura qualquer erro que o backend.exe produzir
   backendProcess.stderr.on('data', (data) => {
-    errorData += data.toString();
+    const errorMessage = data.toString();
+    errorData += errorMessage;
+    // Escreve o erro no nosso arquivo de log
+    try {
+      fs.appendFileSync(backendErrorLogPath, `[${new Date().toISOString()}] STDERR: ${errorMessage}\n`);
+    } catch (e) {
+      console.error("Failed to write to backend error log:", e);
+    }
   });
 
   backendProcess.on('close', (code) => {
@@ -111,17 +134,24 @@ function callPythonBackend(action, dataPayload, callback) {
     }
   });
 
+  // Captura erros se o processo backend.exe nem sequer conseguir iniciar
   backendProcess.on('error', (err) => {
-    console.error(`Falha ao iniciar o processo Python: ${err.toString()}`);
+    const errorMessage = `Falha ao iniciar o processo Python: ${err.toString()}`;
+    console.error(`[main.js] ${errorMessage}`);
+    // Escreve este erro crítico no nosso arquivo de log
+    try {
+      fs.appendFileSync(backendErrorLogPath, `[${new Date().toISOString()}] SPAWN ERROR: ${errorMessage}\n`);
+    } catch (e) {
+      console.error("Failed to write to backend error log:", e);
+    }
     if (callback) callback(err, null);
   });
+  // --- FIM DA MUDANÇA ---
 }
 
 app.whenReady().then(() => {
   createWindow();
-  // Esta linha inicia a verificação por atualizações assim que o app está pronto.
-  autoUpdater.checkForUpdates(); 
-  
+  autoUpdater.checkForUpdates();
   callPythonBackend('get_personal_goal', null, (err, data) => {
     if (err) {
       console.error('[main.js] Erro ao chamar backend para dados iniciais:', err.message);
@@ -177,8 +207,6 @@ ipcMain.handle('call-python', async (event, action, data) => {
     });
   });
 });
-
-// --- Lógica do Auto-Updater ---
 
 autoUpdater.on('checking-for-update', () => {
   console.log('A verificar por atualizações...');
