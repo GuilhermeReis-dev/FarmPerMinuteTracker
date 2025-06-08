@@ -17,18 +17,44 @@
 
 <body>
     <div id="app-container">
-        <div id="top-bar">
+        <!-- BARRA DE TÍTULO CUSTOMIZADA -->
+        <div id="custom-title-bar">
+            <!-- Título do Aplicativo -->
+            <div id="title-text">Farm Per Minute Tracker</div>
+
+            <!-- Navegação Principal -->
             <div id="nav-bar-main">
                 <button data-page="GerenciarMetasPage">Gerir Metas</button>
                 <button data-page="GameplayPage">GAMEPLAY</button>
                 <button data-page="HistoricoPartidasPage">Histórico</button>
                 <button data-page="EstatisticasPage">Estatísticas</button>
             </div>
-            <button id="help-icon-button">?</button>
+
+            <!-- Botões de Controle da Janela (CORRIGIDO com SVG) -->
+            <div id="title-bar-buttons">
+                <button id="help-icon-button">?</button>
+                <button id="minimize-btn" class="window-control-btn">
+                    <svg aria-hidden="true" class="icon-minimize">
+                        <path d="M 0,5 10,5" />
+                    </svg>
+                </button>
+                <button id="maximize-btn" class="window-control-btn">
+                    <svg aria-hidden="true" class="icon-maximize">
+                        <path d="M 1,1 9,1 9,9 1,9 Z" />
+                    </svg>
+                    <svg aria-hidden="true" class="icon-restore" style="display: none;">
+                        <path d="m 2,1 7,0 0,7 -7,0 z M 0,3 7,3 7,10 0,10 Z" />
+                    </svg>
+                </button>
+                <button id="close-btn" class="window-control-btn">
+                    <svg aria-hidden="true" class="icon-close">
+                        <path d="M 1,1 10,10 M 10,1 1,10" />
+                    </svg>
+                </button>
+            </div>
         </div>
 
         <main id="app-content">
-            <!-- ... (O conteúdo das outras páginas permanece o mesmo) ... -->
             <div id="GerenciarMetasPage-content" class="page-content" style="display: none;">
                 <h2>Gerir Metas</h2>
                 <div class="content-section">
@@ -69,7 +95,6 @@
                         <div class="profile-list-column">
                             <h4>Perfis Salvos (Máx. 3)</h4>
                             <ul id="other-profiles-list">
-                                <!-- Perfis carregados pelo JS -->
                             </ul>
                             <div class="add-profile-form form-group">
                                 <input type="text" id="new-profile-name" placeholder="Nome do Perfil"
@@ -84,7 +109,6 @@
                             <hr class="minor-hr">
                             <h5>Partidas de Exemplo</h5>
                             <ul id="example-matches-list">
-                                <!-- Partidas carregadas pelo JS -->
                             </ul>
                             <div class="fpm-average-display-container">
                                 <label>FPM Médio do Perfil:</label>
@@ -174,7 +198,7 @@
                     </div>
                     <div class="form-group">
                         <label for="final-character">Personagem (Opcional):</label>
-                        <input type="text" id="final-character" placeholder="Ex: Ashe, Garen">
+                        <input type="text" id="final-character" placeholder="Ex: Abrams, bebop">
                     </div>
                     <div class="form-group">
                         <label for="final-difficulty">Dificuldade da Partida:</label>
@@ -221,7 +245,7 @@
                             <label for="manual-difficulty">Dificuldade:</label>
                             <select id="manual-difficulty">
                                 <option value="EASY">Easy</option>
-                                <option value="NORMAL">Normal</option>
+                                <option value="NORMAL" selected>Normal</option> <!-- ATRIBUTO 'selected' ADICIONADO -->
                                 <option value="HARD">Hard</option>
                             </select>
                         </div>
@@ -308,7 +332,6 @@
                 </div>
             </div>
 
-            <!-- Conteúdo da Página de Estatísticas -->
             <div id="EstatisticasPage-content" class="page-content" style="display: none;">
                 <h2>Estatísticas</h2>
 
@@ -317,7 +340,6 @@
                         <button id="refresh-stats-button" class="action-button">Atualizar Estatísticas</button>
                     </div>
 
-                    <!-- Cards de Destaque -->
                     <h3 class="stats-header">Destaques Gerais</h3>
                     <div class="stats-grid">
                         <div class="stat-card">
@@ -326,7 +348,6 @@
                         </div>
                     </div>
 
-                    <!-- Cards de Média -->
                     <h3 class="stats-header">Médias de FPM</h3>
                     <div class="stats-grid">
                         <div class="stat-card">
@@ -347,7 +368,6 @@
                         </div>
                     </div>
 
-                    <!-- SEÇÃO DE FILTROS -->
                     <div class="stats-filters-section">
                         <h3 class="stats-header">Filtros e Comparações</h3>
                         <div class="filter-controls">
@@ -355,13 +375,11 @@
                                 <label for="character-filter-select">Filtrar por Personagem:</label>
                                 <select id="character-filter-select">
                                     <option value="all">Todos os Personagens</option>
-                                    <!-- Opções populadas pelo JavaScript -->
                                 </select>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Gráfico -->
                     <h3 class="stats-header">Evolução do FPM (Últimas 15 Partidas)</h3>
                     <div class="chart-container">
                         <canvas id="fpm-evolution-chart"></canvas>
@@ -371,7 +389,6 @@
                 </div>
             </div>
 
-            <!-- ... (O resto do arquivo permanece o mesmo) ... -->
             <div id="python-error-display" class="output-container error global-error" style="display: none;"></div>
         </main>
         <div id="floating-warning-message" class="floating-message warning-message" style="display: none;"></div>

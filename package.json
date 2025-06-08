@@ -1,6 +1,6 @@
 {
   "name": "electronfarmtracker",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Farm Per Minute Tracker com Electron e Python",
   "main": "main.js",
   "scripts": {
@@ -12,7 +12,7 @@
   "author": "Guilherme Reis",
   "license": "ISC",
   "devDependencies": {
-    "electron": "^31.0.2",
+    "electron": "^31.7.7",
     "electron-builder": "^24.13.3",
     "rimraf": "^6.0.1"
   },
@@ -26,9 +26,14 @@
     "icon": "img/icon.ico",
     "extraResources": [
       {
-        "from": "dist/backend.exe",
+        "from": "engine/backend.exe",
         "to": "backend.exe"
       }
+    ],
+    "files": [
+      "**/*",
+      "!dist/",
+      "!*.spec"
     ],
     "win": {
       "target": "nsis"

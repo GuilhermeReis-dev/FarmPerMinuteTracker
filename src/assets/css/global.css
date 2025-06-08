@@ -19,69 +19,6 @@ body {
     position: relative;
 }
 
-#top-bar {
-    background-color: #252526;
-    padding: 10px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
-    flex-shrink: 0;
-    position: relative;
-    z-index: 100;
-}
-
-#nav-bar-main {
-    display: flex;
-    justify-content: center;
-    flex-grow: 1;
-}
-
-#nav-bar-main button {
-    background-color: #007ACC;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    margin: 0 5px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 14px;
-    transition: background-color 0.2s ease;
-}
-
-#nav-bar-main button:hover {
-    background-color: #005C99;
-}
-
-#nav-bar-main button.active {
-    background-color: #005C99;
-    font-weight: bold;
-}
-
-#help-icon-button {
-    background-color: transparent;
-    color: #D4D4D4;
-    border: 1px solid #444;
-    padding: calc(5px * 0.65) calc(10px * 0.65);
-    font-size: calc(18px * 0.65);
-    font-weight: bold;
-    border-radius: 50%;
-    cursor: pointer;
-    transition: background-color 0.2s, color 0.2s;
-    margin-right: 15px;
-    line-height: 1;
-    min-width: calc(28px * 0.65);
-    min-height: calc(28px * 0.65);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-#help-icon-button:hover {
-    background-color: #444;
-    color: white;
-}
-
 #app-content {
     flex-grow: 1;
     padding: 20px;
@@ -250,7 +187,6 @@ input[type="number"] {
     font-size: 1.1em;
 }
 
-/* Estilos de Botão de Ação Genéricos */
 .action-button {
     color: white;
     border: none;
@@ -272,8 +208,6 @@ input[type="number"] {
     margin-left: 0;
 }
 
-
-/* Botões de Perigo (Excluir) */
 .action-button.danger-button {
     background-color: #D32F2F;
 }
@@ -284,14 +218,11 @@ input[type="number"] {
 
 .action-button.danger-button:disabled {
     background-color: #7d2121 !important;
-    /* CORRIGIDO: Fundo vermelho escuro e opaco */
     color: #b0b0b0 !important;
     cursor: not-allowed;
     opacity: 1;
-    /* CORRIGIDO: Remove a transparência que causava o fundo branco */
 }
 
-/* Botões de Registro/Sucesso (Salvar, Adicionar) */
 .action-button.register-button {
     background-color: #4CAF50;
 }
@@ -307,7 +238,6 @@ input[type="number"] {
     opacity: 1;
 }
 
-/* Botões de Cancelar/Neutro */
 .action-button.cancel-button {
     background-color: #757575;
 }
@@ -323,7 +253,6 @@ input[type="number"] {
     opacity: 1;
 }
 
-/* Botões Padrão/Ação Primária e Outros */
 .action-button,
 #edit-history-entry-button,
 #refresh-history-button {
@@ -344,22 +273,6 @@ input[type="number"] {
     cursor: not-allowed;
     opacity: 1;
 }
-
-/* Manter o estilo dos botões de navegação separados para clareza */
-#nav-bar-main button {
-    background-color: #007ACC;
-}
-
-#nav-bar-main button:hover {
-    background-color: #005C99;
-}
-
-#nav-bar-main button:disabled {
-    background-color: #004C8C !important;
-    color: #b0b0b0 !important;
-    opacity: 1;
-}
-
 
 .status-message {
     margin-top: 10px;
@@ -488,4 +401,129 @@ hr.minor-hr {
 .floating-message.success-message {
     background-color: #4CAF50;
     color: #FFFFFF;
+}
+
+footer>p {
+    text-align: center;
+}
+
+
+/* ================================================= */
+/* === ESTILOS ATUALIZADOS PARA A BARRA DE TÍTULO  === */
+/* ================================================= */
+
+#custom-title-bar {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    height: 45px;
+    background-color: #202020;
+    color: #E0E0E0;
+    flex-shrink: 0;
+    user-select: none;
+    -webkit-app-region: drag;
+    border-bottom: 1px solid #333;
+}
+
+#title-text {
+    grid-column: 1;
+    justify-self: start;
+    padding-left: 15px;
+    font-size: 15px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    color: #E0E0E0;
+}
+
+#nav-bar-main {
+    grid-column: 2;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    -webkit-app-region: no-drag;
+}
+
+#nav-bar-main button {
+    background-color: transparent;
+    color: #a0a0a0;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 0 20px;
+    margin: 0;
+    height: 100%;
+    border-radius: 0;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s ease-in-out;
+}
+
+#nav-bar-main button:hover {
+    background-color: #2d2d2d;
+    color: #ffffff;
+}
+
+#nav-bar-main button.active {
+    color: #ffffff;
+    font-weight: 600;
+    border-bottom: 2px solid #007ACC;
+    background-color: transparent;
+}
+
+#title-bar-buttons {
+    grid-column: 3;
+    justify-self: end;
+    display: flex;
+    align-items: center;
+    height: 100%;
+    -webkit-app-region: no-drag;
+}
+
+#help-icon-button,
+.window-control-btn {
+    background: transparent;
+    border: none;
+    color: #cccccc;
+    width: 45px;
+    height: 100%;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border-radius: 0;
+    min-width: unset;
+    min-height: unset;
+    line-height: 1;
+}
+
+#help-icon-button:hover,
+.window-control-btn:hover {
+    background-color: #3e3e42;
+}
+
+#close-btn:hover {
+    background-color: #E81123;
+    color: #fff;
+}
+
+/* --- ÍCONES DE CONTROLE DA JANELA (CORRIGIDO COM SVG) --- */
+.window-control-btn svg {
+    width: 11px;
+    height: 11px;
+}
+
+.window-control-btn .icon-minimize path,
+.window-control-btn .icon-maximize path,
+.window-control-btn .icon-restore path,
+.window-control-btn .icon-close path {
+    stroke: currentColor;
+    stroke-width: 1.5;
+    fill: none;
+}
+
+#help-icon-button {
+    font-size: 18px;
+    font-weight: 500;
 }

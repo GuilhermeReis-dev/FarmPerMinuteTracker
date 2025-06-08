@@ -9,7 +9,7 @@ let outroPerfilFpmGameplay, seuDesempenhoLabel, seuDesempenhoSelect, seuDesempen
 let postGameFormArea, finalTimeMinInput, finalTimeSecInput, finalFarmInput, finalCharacterInput;
 let finalDifficultySelect, fpmPartidaAtual, registerMatchButton, cancelContinueButton, postGameStatus;
 
-let metasReferenciaSection; // Nova variável para a seção
+let metasReferenciaSection;
 
 let timerInterval = null;
 let elapsedSeconds = 0;
@@ -50,7 +50,7 @@ function startTimer() {
         if (resetTimerButton) resetTimerButton.disabled = false;
         if (postGameFormArea) postGameFormArea.style.display = 'none';
 
-        if (metasReferenciaSection) metasReferenciaSection.style.display = 'block'; // MOSTRAR SEÇÃO
+        if (metasReferenciaSection) metasReferenciaSection.style.display = 'block';
 
         updateReferenceDisplays();
         runTimer();
@@ -67,7 +67,6 @@ function pauseTimer() {
             startTimerButton.textContent = 'Retomar';
         }
         if (pauseTimerButton) pauseTimerButton.disabled = true;
-        // Não esconder metasReferenciaSection ao pausar
     }
 }
 
@@ -86,9 +85,9 @@ function resetTimer() {
     if (fpmPartidaAtual) fpmPartidaAtual.textContent = 'N/A';
     if (finalFarmInput) finalFarmInput.value = '';
     if (finalCharacterInput) finalCharacterInput.value = '';
-    if (finalDifficultySelect) finalDifficultySelect.value = 'MÉDIA';
+    // if (finalDifficultySelect) finalDifficultySelect.value = 'NORMAL'; // REMOVIDO
 
-    if (metasReferenciaSection) metasReferenciaSection.style.display = 'none'; // ESCONDER SEÇÃO
+    if (metasReferenciaSection) metasReferenciaSection.style.display = 'none';
 
     updateReferenceDisplays();
 }
@@ -101,7 +100,7 @@ function finalizeTimer() {
         finalTimeSecInput.value = elapsedSeconds % 60;
         if (finalFarmInput) finalFarmInput.value = '';
         if (finalCharacterInput) finalCharacterInput.value = '';
-        if (finalDifficultySelect) finalDifficultySelect.value = 'MÉDIA';
+        // if (finalDifficultySelect) finalDifficultySelect.value = 'NORMAL'; // REMOVIDO
         calculateCurrentGameFPM();
         postGameFormArea.style.display = 'block';
     }
@@ -109,10 +108,10 @@ function finalizeTimer() {
     if (startTimerButton) startTimerButton.disabled = true;
     if (pauseTimerButton) pauseTimerButton.disabled = true;
 
-    if (metasReferenciaSection) metasReferenciaSection.style.display = 'none'; // ESCONDER SEÇÃO
+    if (metasReferenciaSection) metasReferenciaSection.style.display = 'none';
 }
 
-// --- Funções de Referência de FPM --- (sem alterações aqui, mantidas para contexto)
+// --- Funções de Referência de FPM ---
 function _formatDynamicFarmDisplay(farmValue) {
     if (farmValue === null || farmValue === undefined || isNaN(farmValue)) {
         return "N/A";
@@ -303,7 +302,7 @@ async function onSeuDesempenhoSelect() {
     updateReferenceDisplays();
 }
 
-// --- Funções do Formulário Pós-Partida --- (sem alterações aqui, mantidas para contexto)
+// --- Funções do Formulário Pós-Partida ---
 function calculateCurrentGameFPM() {
     if (!finalFarmInput || !finalTimeMinInput || !finalTimeSecInput || !fpmPartidaAtual) return;
     const farm = parseInt(finalFarmInput.value) || 0;
@@ -401,7 +400,7 @@ export function initGameplayHandler() {
     finalizeTimerButton = document.getElementById('finalize-timer-button');
     resetTimerButton = document.getElementById('reset-timer-button');
 
-    metasReferenciaSection = document.getElementById('metas-referencia-section'); // PEGAR REFERÊNCIA
+    metasReferenciaSection = document.getElementById('metas-referencia-section');
 
     displayModeSelect = document.getElementById('display-mode-select');
     minhaMetaLabel = document.getElementById('minha-meta-label');
@@ -445,7 +444,7 @@ export function initGameplayHandler() {
     if (resetTimerButton) resetTimerButton.disabled = false;
     if (postGameFormArea) postGameFormArea.style.display = 'none';
 
-    if (metasReferenciaSection) metasReferenciaSection.style.display = 'none'; // ESCONDER INICIALMENTE
+    if (metasReferenciaSection) metasReferenciaSection.style.display = 'none';
 }
 
 // --- Função Chamada Quando a Página é Exibida ---
@@ -454,5 +453,4 @@ export function onShowGameplayHandler() {
     loadGameplayReferences();
     updateTimerDisplayDOM();
     updateReferenceDisplays();
-    // A visibilidade de metasReferenciaSection é controlada pelos botões do timer agora
 }

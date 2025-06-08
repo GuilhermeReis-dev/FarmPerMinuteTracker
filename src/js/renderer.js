@@ -10,19 +10,57 @@ document.addEventListener('DOMContentLoaded', () => {
     const pythonErrorDisplay = document.getElementById('python-error-display');
     const tutorialModal = document.getElementById('tutorial-modal');
     const helpIconButton = document.getElementById('help-icon-button');
-    const closeModalButton = document.querySelector('.close-modal-button');
 
-    // ========================================================== //
-    //           NOVO CÓDIGO PARA EXIBIR A VERSÃO                 //
-    // ========================================================== //
+    const closeModalButton = document.querySelector('#tutorial-modal .close-modal-button');
+
+    // === CÓDIGO PARA OS CONTROLES DA BARRA DE TÍTULO CUSTOMIZADA (CORRIGIDO COM SVG) ===
+    const minimizeButton = document.getElementById('minimize-btn');
+    const maximizeButton = document.getElementById('maximize-btn');
+    const closeButton = document.getElementById('close-btn');
+
+    if (minimizeButton) {
+        minimizeButton.addEventListener('click', () => {
+            window.electronAPI.send('minimize-window');
+        });
+    }
+
+    if (maximizeButton) {
+        maximizeButton.addEventListener('click', () => {
+            window.electronAPI.send('maximize-window');
+        });
+    }
+
+    if (closeButton) {
+        closeButton.addEventListener('click', () => {
+            window.electronAPI.send('close-window');
+        });
+    }
+
+    // Ouve a mudança de estado da janela para trocar o ícone de maximizar/restaurar
+    if (window.electronAPI && typeof window.electronAPI.onWindowStateChange === 'function' && maximizeButton) {
+        const maximizeIcon = maximizeButton.querySelector('.icon-maximize');
+        const restoreIcon = maximizeButton.querySelector('.icon-restore');
+
+        window.electronAPI.onWindowStateChange(state => {
+            if (state.maximized) {
+                maximizeIcon.style.display = 'none';
+                restoreIcon.style.display = 'block';
+            } else {
+                maximizeIcon.style.display = 'block';
+                restoreIcon.style.display = 'none';
+            }
+        });
+    }
+    // =======================================================================
+
+
+    // CÓDIGO PARA EXIBIR A VERSÃO
     const versionElement = document.getElementById('app-version');
     if (versionElement) {
-        // Usamos a função 'getAppVersion' que expusemos no preload.js
         window.electronAPI.getAppVersion().then(version => {
             versionElement.innerText = `v${version}`;
         });
     }
-    // ========================================================== //
 
     let isFirstLoad = true;
 
@@ -52,7 +90,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             showPage(pageId, pageContents, navButtons);
 
-            // Chama a função 'onShow' correspondente para atualizar os dados da página
             if (pageId === 'GerenciarMetasPage') onShowGoalsManager();
             else if (pageId === 'GameplayPage') onShowGameplayHandler();
             else if (pageId === 'HistoricoPartidasPage') onShowHistoryHandler();
@@ -83,10 +120,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (window.electronAPI && typeof window.electronAPI.onInitialData === 'function') {
         window.electronAPI.onInitialData((data) => {
             if (isFirstLoad) {
-                // Chama a função 'onShow' da página inicial para garantir que ela tenha os dados mais recentes.
                 if (initialPageId === 'GameplayPage') onShowGameplayHandler();
 
-                // Verifica se é a primeira vez que o usuário abre o app para mostrar o tutorial.
                 const isFreshInstall = (data && data.exists && data.nome_meta === "Minha Meta Pessoal" && data.tempo_segundos === 0 && data.farm_referencia === 0) || (data && data.exists === false);
                 if (isFreshInstall && tutorialModal) {
                     tutorialModal.style.display = 'block';
@@ -96,7 +131,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     } else {
         console.error("[renderer.js] Erro CRÍTICO: electronAPI.onInitialData não está disponível.");
-        // Mesmo com erro, tenta carregar a página inicial.
         if (initialPageId === 'GameplayPage') onShowGameplayHandler();
         isFirstLoad = false;
     }
