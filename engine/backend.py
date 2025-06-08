@@ -5,44 +5,51 @@ import sys
 import json
 import datetime
 from collections import Counter
+from pathlib import Path # Importa a biblioteca Path para lidar com caminhos de forma mais fácil
 
-APP_NAME = "FarmPerMinuteTracker"
+# --- INÍCIO DA ALTERAÇÃO OBRIGATÓRIA ---
+
+# Nome do seu aplicativo. Usaremos para criar uma pasta segura.
+APP_NAME = "ElectronFarmTracker"
 DB_NAME = "farm_tracker.db"
 
-# --- CONFIGURAÇÃO DO BANCO DE DADOS ---
-
-def get_app_data_path():
-    """Determina e cria o caminho para o arquivo do banco de dados na pasta de dados do aplicativo."""
-    app_name_folder = APP_NAME
-    if hasattr(sys, 'frozen'):
-        path = os.path.join(os.path.dirname(sys.executable), app_name_folder + "_Data")
+def get_database_path():
+    """
+    Determina e cria o caminho para o arquivo do banco de dados na pasta de dados do aplicativo,
+    garantindo que os dados do usuário sejam persistentes.
+    """
+    # No Windows, os.getenv('APPDATA') retorna o caminho para a pasta AppData\Roaming do usuário
+    # (ex: C:\Users\SeuUsuario\AppData\Roaming). Este é o local correto e seguro para dados.
+    # Em outros sistemas operacionais, usamos o home do usuário como base.
+    if sys.platform == "win32":
+        # Constrói o caminho completo: C:\Users\SeuUsuario\AppData\Roaming\ElectronFarmTracker
+        app_data_dir = Path(os.getenv('APPDATA')) / APP_NAME
     else:
-        if os.name == 'nt':
-            path = os.path.join(os.getenv('APPDATA') or os.path.expanduser('~'), app_name_folder)
-        elif sys.platform == "darwin":
-            path = os.path.join(os.path.expanduser('~'), 'Library', 'Application Support', app_name_folder)
-        else:
-            path = os.path.join(os.path.expanduser('~'), '.local', 'share', app_name_folder)
-    
-    try:
-        if not os.path.exists(path): os.makedirs(path)
-    except Exception:
-        current_dir_fallback = os.path.dirname(os.path.abspath(__file__) if not hasattr(sys, 'frozen') else sys.executable)
-        path = os.path.join(current_dir_fallback, app_name_folder + "_Data_Fallback")
-        try:
-            if not os.path.exists(path): os.makedirs(path)
-        except Exception:
-            path = os.path.join(os.getcwd(), app_name_folder + "_Data_CurrentDir")
-            os.makedirs(path, exist_ok=True)
-    return path
+        # Fallback para Linux/macOS
+        app_data_dir = Path.home() / f".{APP_NAME.lower()}"
 
-def setup_database(db_path):
+    # Cria a pasta do seu aplicativo dentro de AppData\Roaming, se ela ainda não existir.
+    app_data_dir.mkdir(parents=True, exist_ok=True)
+
+    # Retorna o caminho completo para o arquivo do banco de dados.
+    # Ex: C:\Users\SeuUsuario\AppData\Roaming\ElectronFarmTracker\farm_tracker.db
+    return app_data_dir / DB_NAME
+
+# A variável DATABASE_PATH agora é definida dinamicamente pela função.
+DATABASE_PATH = get_database_path()
+
+# --- FIM DA ALTERAÇÃO OBRIGATÓRIA ---
+
+
+def setup_database():
     """Conecta-se ao banco de dados e cria as tabelas se elas não existirem."""
-    db_conn = sqlite3.connect(db_path, detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES)
+    # Usa a variável global DATABASE_PATH que agora aponta para o local seguro.
+    db_conn = sqlite3.connect(DATABASE_PATH, detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES)
     db_conn.text_factory = str
     cursor = db_conn.cursor()
     cursor.execute("PRAGMA foreign_keys = ON;")
-    
+
+    # O resto da sua função de setup continua exatamente igual...
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS minha_farm_base (
             id INTEGER PRIMARY KEY,
@@ -94,18 +101,20 @@ def setup_database(db_path):
     if 'origem' not in column_names:
         try: cursor.execute("ALTER TABLE historico_partidas_usuario ADD COLUMN origem TEXT CHECK(origem IN ('Manual', 'Cronômetro'))")
         except sqlite3.OperationalError: pass
-    
+
     db_conn.commit()
     return db_conn
 
 # --- LÓGICA DE NEGÓCIOS (AÇÕES) ---
+# NENHUMA ALTERAÇÃO NECESSÁRIA AQUI PARA BAIXO.
+# TODO O SEU CÓDIGO RESTANTE PERMANECE EXATAMENTE O MESMO.
 
 def get_personal_goal_logic(db_conn):
     """Busca ou cria a meta pessoal do usuário."""
     cursor = db_conn.cursor()
     cursor.execute("SELECT id, nome_meta, tempo_referencia_segundos, farm_referencia, fpm_calculado FROM minha_farm_base WHERE id = 1 LIMIT 1")
     meta = cursor.fetchone()
-    db_full_path = os.path.join(get_app_data_path(), DB_NAME)
+    db_full_path = str(DATABASE_PATH)
     if meta:
         return {"id": meta[0], "nome_meta": meta[1], "tempo_segundos": meta[2], "farm_referencia": meta[3], "fpm_meta": meta[4], "exists": True, "db_path": db_full_path, "success": True}
     else:
@@ -463,7 +472,7 @@ def get_filtered_stats_logic(db_conn, data):
         },
         "chart_data": []
     }
-    
+
     base_query = "FROM historico_partidas_usuario"
     params = []
     where_clauses = []
@@ -498,14 +507,14 @@ def get_filtered_stats_logic(db_conn, data):
         top_char_clauses.append("personagem_utilizado != ''")
         where_sql = " WHERE " + " AND ".join(top_char_clauses)
         cursor.execute(f"SELECT personagem_utilizado {base_query} {where_sql}", params)
-        
+
         characters = [row[0] for row in cursor.fetchall()]
         if characters:
             if character_filter and character_filter != 'all':
                 stats["summary"]["top_character"] = character_filter
             else:
                 stats["summary"]["top_character"] = Counter(characters).most_common(1)[0][0]
-        
+
         # Dados para o gráfico
         where_sql = " WHERE " + " AND ".join(where_clauses) if where_clauses else ""
         cursor.execute(f"SELECT data_hora, fpm_calculado {base_query} {where_sql} ORDER BY id_partida_usuario DESC LIMIT 15", params)
@@ -520,11 +529,10 @@ def get_filtered_stats_logic(db_conn, data):
 
 def process_request(action=None, data_payload=None):
     """Processa uma requisição vinda do main.js, chamando a função de lógica apropriada."""
-    db_file_path = os.path.join(get_app_data_path(), DB_NAME)
     conn = None
     try:
-        conn = setup_database(db_file_path)
-        
+        conn = setup_database() # Modificado para não precisar passar o caminho
+
         action_map = {
             "get_personal_goal": get_personal_goal_logic,
             "save_personal_goal": save_personal_goal_logic,
@@ -550,22 +558,27 @@ def process_request(action=None, data_payload=None):
 
         logic_function = action_map.get(action)
         if logic_function:
-            if action in ["save_personal_goal", "add_other_profile", "delete_other_profile", "update_other_profile_name", "get_example_matches", "add_example_match", "update_example_match", "delete_example_match", "register_gameplay_match", "get_single_profile_avg_fpm", "add_manual_match", "update_match_history_entry", "delete_match_history_entry", "get_filtered_stats"]:
-                return logic_function(conn, data_payload)
+            # Simplificado: passa o payload para todas as funções que podem precisar dele.
+            if data_payload is not None:
+                 return logic_function(conn, data_payload)
             else:
-                return logic_function(conn)
+                 return logic_function(conn)
         else:
             return get_personal_goal_logic(conn)
 
     except Exception as e:
         print(f"Erro no process_request: {e}", file=sys.stderr)
-        return {"error": str(e), "db_path_error": db_file_path, "success": False}
+        return {"error": str(e), "db_path_error": str(DATABASE_PATH), "success": False}
     finally:
         if conn: conn.close()
 
 # --- PONTO DE ENTRADA DO SCRIPT ---
 
 if __name__ == "__main__":
+    # Esta inicialização de BD aqui não é estritamente necessária
+    # se toda chamada passa por process_request, mas não prejudica.
+    setup_database()
+
     input_str = sys.stdin.read()
     action_to_perform = "get_personal_goal"
     payload = None
