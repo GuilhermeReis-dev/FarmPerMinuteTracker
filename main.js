@@ -6,7 +6,6 @@ const { spawn } = require('child_process');
 let mainWindow;
 let initialDataForRenderer = null;
 
-// A flag isDev não é mais necessária para o caminho do arquivo, mas é útil para outras coisas
 const isDev = !app.isPackaged;
 
 function createWindow() {
@@ -15,23 +14,18 @@ function createWindow() {
     height: 800,
     frame: false,
     webPreferences: {
-      devTools: true,
-      preload: path.join(__dirname, 'preload.js'), // Este caminho é relativo ao __dirname e está correto
+      devTools: false, // Desativado para a versão de produção
+      preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false
     }
   });
 
-  // ======================= ALTERAÇÃO PRINCIPAL =======================
-  // Unificamos o caminho. O app sempre vai carregar o index.html de dentro
-  // da pasta 'src', tanto em desenvolvimento quanto em produção.
   const htmlPath = path.join(__dirname, 'src', 'index.html');
   mainWindow.loadFile(htmlPath).catch((err) => {
     console.error(`[main.js] Falha ao carregar o arquivo HTML em: ${htmlPath}`, err);
-    // Adicione um diálogo de erro para o usuário final, caso o arquivo não seja encontrado
     dialog.showErrorBox('Erro Crítico', `Não foi possível carregar a interface do aplicativo. O arquivo em ${htmlPath} não foi encontrado.`);
   });
-  // ===================================================================
 
   mainWindow.on('maximize', () => {
     mainWindow.webContents.send('window-state-changed', { maximized: true });
@@ -41,8 +35,8 @@ function createWindow() {
     mainWindow.webContents.send('window-state-changed', { maximized: false });
   });
 
-  // Mantenha o DevTools aberto para depuração, mesmo na versão de produção, até ter certeza que tudo funciona
-  //mainWindow.webContents.openDevTools();
+  // A linha abaixo foi comentada para não abrir o console para o usuário final.
+  // mainWindow.webContents.openDevTools();
 
   mainWindow.webContents.on('did-finish-load', () => {
     Menu.setApplicationMenu(null);
@@ -52,9 +46,6 @@ function createWindow() {
     }
   });
 }
-
-// O resto do seu arquivo main.js continua igual...
-// (spawn do python, ipcMain, autoUpdater, etc.)
 
 function callPythonBackend(action, dataPayload, callback) {
   let backendProcess;
@@ -66,14 +57,12 @@ function callPythonBackend(action, dataPayload, callback) {
       env: { ...process.env, PYTHONIOENCODING: 'utf-8' }
     });
   } else {
-    // Na versão de produção, o backend.exe está na raiz dos recursos
     const executablePath = path.join(process.resourcesPath, 'backend.exe');
     backendProcess = spawn(executablePath, [], {
       env: { ...process.env, PYTHONIOENCODING: 'utf-8' }
     });
   }
 
-  // O restante da função callPythonBackend permanece o mesmo
   let fullData = '';
   let errorData = '';
 
@@ -123,14 +112,16 @@ function callPythonBackend(action, dataPayload, callback) {
   });
 
   backendProcess.on('error', (err) => {
-    console.error('[main.js] Falha ao iniciar o processo Python:', err);
+    console.error(`Falha ao iniciar o processo Python: ${err.toString()}`);
     if (callback) callback(err, null);
   });
 }
 
 app.whenReady().then(() => {
   createWindow();
-  autoUpdater.checkForUpdates();
+  // Esta linha inicia a verificação por atualizações assim que o app está pronto.
+  autoUpdater.checkForUpdates(); 
+  
   callPythonBackend('get_personal_goal', null, (err, data) => {
     if (err) {
       console.error('[main.js] Erro ao chamar backend para dados iniciais:', err.message);
@@ -186,6 +177,8 @@ ipcMain.handle('call-python', async (event, action, data) => {
     });
   });
 });
+
+// --- Lógica do Auto-Updater ---
 
 autoUpdater.on('checking-for-update', () => {
   console.log('A verificar por atualizações...');

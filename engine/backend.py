@@ -5,12 +5,11 @@ import sys
 import json
 import datetime
 from collections import Counter
-from pathlib import Path # Importa a biblioteca Path para lidar com caminhos de forma mais fácil
+from pathlib import Path
 
-# --- INÍCIO DA ALTERAÇÃO OBRIGATÓRIA ---
+# --- INÍCIO DA SEÇÃO DE CONFIGURAÇÃO (CORRIGIDA) ---
 
-# Nome do seu aplicativo. Usaremos para criar uma pasta segura.
-APP_NAME = "ElectronFarmTracker"
+APP_NAME = "Farm Per Minute Tracker"
 DB_NAME = "farm_tracker.db"
 
 def get_database_path():
@@ -18,38 +17,28 @@ def get_database_path():
     Determina e cria o caminho para o arquivo do banco de dados na pasta de dados do aplicativo,
     garantindo que os dados do usuário sejam persistentes.
     """
-    # No Windows, os.getenv('APPDATA') retorna o caminho para a pasta AppData\Roaming do usuário
-    # (ex: C:\Users\SeuUsuario\AppData\Roaming). Este é o local correto e seguro para dados.
-    # Em outros sistemas operacionais, usamos o home do usuário como base.
     if sys.platform == "win32":
-        # Constrói o caminho completo: C:\Users\SeuUsuario\AppData\Roaming\ElectronFarmTracker
+        # Constrói o caminho seguro: C:\Users\SeuUsuario\AppData\Roaming\Farm Per Minute Tracker
         app_data_dir = Path(os.getenv('APPDATA')) / APP_NAME
     else:
-        # Fallback para Linux/macOS
-        app_data_dir = Path.home() / f".{APP_NAME.lower()}"
+        # Fallback para outros sistemas
+        app_data_dir = Path.home() / f".{APP_NAME.replace(' ', '').lower()}"
 
-    # Cria a pasta do seu aplicativo dentro de AppData\Roaming, se ela ainda não existir.
     app_data_dir.mkdir(parents=True, exist_ok=True)
-
-    # Retorna o caminho completo para o arquivo do banco de dados.
-    # Ex: C:\Users\SeuUsuario\AppData\Roaming\ElectronFarmTracker\farm_tracker.db
     return app_data_dir / DB_NAME
 
-# A variável DATABASE_PATH agora é definida dinamicamente pela função.
 DATABASE_PATH = get_database_path()
 
-# --- FIM DA ALTERAÇÃO OBRIGATÓRIA ---
+# --- FIM DA SEÇÃO DE CONFIGURAÇÃO ---
 
 
 def setup_database():
     """Conecta-se ao banco de dados e cria as tabelas se elas não existirem."""
-    # Usa a variável global DATABASE_PATH que agora aponta para o local seguro.
     db_conn = sqlite3.connect(DATABASE_PATH, detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES)
     db_conn.text_factory = str
     cursor = db_conn.cursor()
     cursor.execute("PRAGMA foreign_keys = ON;")
 
-    # O resto da sua função de setup continua exatamente igual...
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS minha_farm_base (
             id INTEGER PRIMARY KEY,
@@ -105,11 +94,7 @@ def setup_database():
     db_conn.commit()
     return db_conn
 
-# --- LÓGICA DE NEGÓCIOS (AÇÕES) ---
-# NENHUMA ALTERAÇÃO NECESSÁRIA AQUI PARA BAIXO.
-# TODO O SEU CÓDIGO RESTANTE PERMANECE EXATAMENTE O MESMO.
-
-def get_personal_goal_logic(db_conn):
+def get_personal_goal_logic(db_conn, data=None):
     """Busca ou cria a meta pessoal do usuário."""
     cursor = db_conn.cursor()
     cursor.execute("SELECT id, nome_meta, tempo_referencia_segundos, farm_referencia, fpm_calculado FROM minha_farm_base WHERE id = 1 LIMIT 1")
@@ -122,13 +107,9 @@ def get_personal_goal_logic(db_conn):
         try:
             cursor.execute("INSERT OR IGNORE INTO minha_farm_base (id, nome_meta, tempo_referencia_segundos, farm_referencia, fpm_calculado) VALUES (1, ?, 0, 0, 0.0)", (nome_padrao,))
             db_conn.commit()
-            cursor.execute("SELECT id, nome_meta, tempo_referencia_segundos, farm_referencia, fpm_calculado FROM minha_farm_base WHERE id = 1 LIMIT 1")
-            meta_criada = cursor.fetchone()
-            if meta_criada:
-                return {"id": meta_criada[0], "nome_meta": meta_criada[1], "tempo_segundos": meta_criada[2], "farm_referencia": meta_criada[3], "fpm_meta": meta_criada[4], "exists": True, "db_path": db_full_path, "success": True}
+            return get_personal_goal_logic(db_conn)
         except sqlite3.Error as e:
-            return {"exists": False, "nome_meta": nome_padrao, "tempo_segundos": 0, "farm_referencia": 0, "fpm_meta": 0.0, "db_path": db_full_path, "success": False, "message": str(e)}
-        return {"exists": False, "nome_meta": nome_padrao, "tempo_segundos": 0, "farm_referencia": 0, "fpm_meta": 0.0, "db_path": db_full_path, "success": True}
+            return {"exists": False, "success": False, "message": str(e)}
 
 def save_personal_goal_logic(db_conn, data):
     """Salva ou atualiza a meta pessoal."""
@@ -139,7 +120,7 @@ def save_personal_goal_logic(db_conn, data):
     try:
         tempo_segundos = int(tempo_segundos); farm_referencia = int(farm_referencia)
         if not (farm_referencia >= 0 and tempo_segundos >= 0): raise ValueError()
-    except ValueError: return {"success": False, "message": "Tempo e Farm devem ser números válidos."}
+    except (ValueError, TypeError): return {"success": False, "message": "Tempo e Farm devem ser números válidos."}
     fpm_calculado = (farm_referencia / tempo_segundos) * 60 if tempo_segundos > 0 else 0.0
     cursor = db_conn.cursor()
     try:
@@ -150,7 +131,7 @@ def save_personal_goal_logic(db_conn, data):
         return {"success": True, "message": "Meta pessoal salva!", "updated_goal": get_personal_goal_logic(db_conn)}
     except sqlite3.Error as e: return {"success": False, "message": f"Erro BD: {e}"}
 
-def delete_personal_goal_logic(db_conn, data):
+def delete_personal_goal_logic(db_conn, data=None):
     """Exclui a meta pessoal."""
     cursor = db_conn.cursor()
     try:
@@ -158,7 +139,7 @@ def delete_personal_goal_logic(db_conn, data):
         return {"success": True, "message": "Meta pessoal excluída."} if cursor.rowcount > 0 else {"success": False, "message": "Nenhuma meta para excluir."}
     except sqlite3.Error as e: return {"success": False, "message": f"Erro BD: {e}"}
 
-def get_other_profiles_logic(db_conn):
+def get_other_profiles_logic(db_conn, data=None):
     """Busca todos os perfis de outros jogadores."""
     cursor = db_conn.cursor()
     cursor.execute("SELECT id_perfil, nome_perfil FROM outros_perfis_base ORDER BY nome_perfil LIMIT 3")
@@ -240,7 +221,7 @@ def add_example_match_logic(db_conn, data):
     try:
         tempo_segundos = int(tempo_segundos); farm = int(farm)
         if not (farm >= 0 and tempo_segundos >= 0): raise ValueError("Valores inválidos.")
-    except ValueError: return {"success": False, "message": "Tempo e Farm devem ser números válidos."}
+    except (ValueError, TypeError): return {"success": False, "message": "Tempo e Farm devem ser números válidos."}
     fpm_calculado = calculate_fpm_backend(farm, tempo_segundos)
     if fpm_calculado is None: return {"success": False, "message": "Não foi possível calcular FPM."}
     cursor = db_conn.cursor()
@@ -263,7 +244,7 @@ def update_example_match_logic(db_conn, data):
     try:
         tempo_segundos = int(tempo_segundos); farm = int(farm)
         if not (farm >= 0 and tempo_segundos >= 0): raise ValueError("Valores inválidos.")
-    except ValueError: return {"success": False, "message": "Tempo e Farm devem ser números válidos."}
+    except (ValueError, TypeError): return {"success": False, "message": "Tempo e Farm devem ser números válidos."}
     fpm_calculado = calculate_fpm_backend(farm, tempo_segundos)
     if fpm_calculado is None: return {"success": False, "message": "Não foi possível calcular FPM."}
     cursor = db_conn.cursor()
@@ -277,8 +258,7 @@ def delete_example_match_logic(db_conn, data):
     """Exclui uma partida de exemplo de um perfil."""
     match_id = data.get('match_id')
     profile_id = data.get('profile_id')
-    if not match_id: return {"success": False, "message": "ID da partida não fornecido."}
-    if not profile_id: return {"success": False, "message": "ID do perfil não fornecido."}
+    if not match_id or not profile_id: return {"success": False, "message": "ID da partida ou do perfil não fornecido."}
     cursor = db_conn.cursor()
     try:
         cursor.execute("DELETE FROM outras_partidas_exemplo WHERE id_partida_exemplo = ? AND id_perfil_fk = ?", (match_id, profile_id))
@@ -324,7 +304,7 @@ def get_single_profile_avg_fpm_logic(db_conn, data):
     avg_fpm = result[0] if result and result[0] is not None else None
     return {"success": True, "avg_fpm": avg_fpm}
 
-def get_historical_fpm_summary_logic(db_conn):
+def get_historical_fpm_summary_logic(db_conn, data=None):
     """Busca um resumo simples do FPM histórico para a tela de Gameplay."""
     stats = {}
     cursor = db_conn.cursor()
@@ -349,9 +329,7 @@ def add_manual_match_logic(db_conn, data):
     if tempo_segundos is None or farm is None or fpm is None or dificuldade is None:
         return {"success": False, "message": "Dados incompletos para adicionar partida manual."}
     try:
-        tempo_s = int(tempo_segundos)
-        farm_o = int(farm)
-        fpm_c = float(fpm)
+        tempo_s = int(tempo_segundos); farm_o = int(farm); fpm_c = float(fpm)
         if not (tempo_s > 0 and farm_o >= 0):
             return {"success": False, "message": "Tempo deve ser positivo e farm não negativo."}
     except (ValueError, TypeError) as e:
@@ -370,7 +348,7 @@ def add_manual_match_logic(db_conn, data):
     except sqlite3.Error as e:
         return {"success": False, "message": f"Erro ao salvar partida manual: {e}"}
 
-def get_match_history_logic(db_conn):
+def get_match_history_logic(db_conn, data=None):
     """Busca o histórico completo de partidas."""
     cursor = db_conn.cursor()
     try:
@@ -380,18 +358,11 @@ def get_match_history_logic(db_conn):
             FROM historico_partidas_usuario
             ORDER BY id_partida_usuario DESC
         """)
-        history = []
-        for row in cursor.fetchall():
-            history.append({
-                "id": row[0],
-                "data_hora": row[1],
-                "tempo_segundos": row[2],
-                "farm_obtido": row[3],
-                "fpm_calculado": row[4],
-                "origem": row[5],
-                "dificuldade_partida": row[6],
-                "personagem_utilizado": row[7]
-            })
+        history = [
+            {"id": row[0], "data_hora": row[1], "tempo_segundos": row[2], "farm_obtido": row[3],
+             "fpm_calculado": row[4], "origem": row[5], "dificuldade_partida": row[6], "personagem_utilizado": row[7]}
+            for row in cursor.fetchall()
+        ]
         return {"success": True, "history": history}
     except sqlite3.Error as e:
         return {"success": False, "message": f"Erro ao buscar histórico: {e}", "history": []}
@@ -407,10 +378,7 @@ def update_match_history_entry_logic(db_conn, data):
     if not match_id or tempo_segundos is None or farm is None or fpm is None or dificuldade is None:
         return {"success": False, "message": "Dados incompletos para atualizar partida."}
     try:
-        match_id_val = int(match_id)
-        tempo_s = int(tempo_segundos)
-        farm_o = int(farm)
-        fpm_c = float(fpm)
+        match_id_val = int(match_id); tempo_s = int(tempo_segundos); farm_o = int(farm); fpm_c = float(fpm)
         if not (tempo_s > 0 and farm_o >= 0):
             return {"success": False, "message": "Tempo deve ser positivo e farm não negativo."}
     except (ValueError, TypeError) as e:
@@ -424,10 +392,7 @@ def update_match_history_entry_logic(db_conn, data):
             WHERE id_partida_usuario = ?
         """, (tempo_s, farm_o, fpm_c, personagem if personagem else None, dificuldade, match_id_val))
         db_conn.commit()
-        if cursor.rowcount > 0:
-            return {"success": True, "message": "Partida atualizada com sucesso!"}
-        else:
-            return {"success": False, "message": "Nenhuma partida encontrada com o ID fornecido para atualizar."}
+        return {"success": True, "message": "Partida atualizada com sucesso!"} if cursor.rowcount > 0 else {"success": False, "message": "Nenhuma partida encontrada com o ID fornecido para atualizar."}
     except sqlite3.Error as e:
         return {"success": False, "message": f"Erro ao atualizar partida: {e}"}
 
@@ -436,22 +401,17 @@ def delete_match_history_entry_logic(db_conn, data):
     match_id = data.get('match_id')
     if not match_id:
         return {"success": False, "message": "ID da partida não fornecido para exclusão."}
-    try:
-        match_id_val = int(match_id)
-    except ValueError:
-        return {"success": False, "message": "ID da partida inválido."}
+    try: match_id_val = int(match_id)
+    except ValueError: return {"success": False, "message": "ID da partida inválido."}
     cursor = db_conn.cursor()
     try:
         cursor.execute("DELETE FROM historico_partidas_usuario WHERE id_partida_usuario = ?", (match_id_val,))
         db_conn.commit()
-        if cursor.rowcount > 0:
-            return {"success": True, "message": "Partida excluída do histórico com sucesso!"}
-        else:
-            return {"success": False, "message": "Nenhuma partida encontrada com o ID fornecido para excluir."}
+        return {"success": True, "message": "Partida excluída do histórico com sucesso!"} if cursor.rowcount > 0 else {"success": False, "message": "Nenhuma partida encontrada com o ID fornecido para excluir."}
     except sqlite3.Error as e:
         return {"success": False, "message": f"Erro ao excluir partida: {e}"}
 
-def get_all_characters_logic(db_conn):
+def get_all_characters_logic(db_conn, data=None):
     """Busca uma lista de todos os personagens únicos já jogados."""
     cursor = db_conn.cursor()
     try:
@@ -464,75 +424,41 @@ def get_all_characters_logic(db_conn):
 def get_filtered_stats_logic(db_conn, data):
     """Busca estatísticas completas, aplicando filtros se fornecidos."""
     character_filter = data.get('character_filter') if data else None
-
-    stats = {
-        "averages": {},
-        "summary": {
-            "top_character": None,
-        },
-        "chart_data": []
-    }
-
+    stats = {"averages": {}, "summary": {"top_character": None}, "chart_data": []}
     base_query = "FROM historico_partidas_usuario"
-    params = []
-    where_clauses = []
-
+    params = []; where_clauses = []
     if character_filter and character_filter != 'all':
-        where_clauses.append("personagem_utilizado = ?")
-        params.append(character_filter)
-
+        where_clauses.append("personagem_utilizado = ?"); params.append(character_filter)
     cursor = db_conn.cursor()
     try:
-        # Média Geral
-        geral_clauses = list(where_clauses)
-        geral_clauses.append("fpm_calculado IS NOT NULL")
-        where_sql = " WHERE " + " AND ".join(geral_clauses)
+        geral_clauses = list(where_clauses); geral_clauses.append("fpm_calculado IS NOT NULL")
+        where_sql = " WHERE " + " AND ".join(geral_clauses) if geral_clauses else "WHERE fpm_calculado IS NOT NULL"
         cursor.execute(f"SELECT AVG(fpm_calculado) {base_query} {where_sql}", params)
-        avg_geral = cursor.fetchone()
-        stats["averages"]["Média Geral"] = avg_geral[0] if avg_geral and avg_geral[0] is not None else None
-
-        # Médias por dificuldade
+        stats["averages"]["Média Geral"] = cursor.fetchone()[0]
         for dif in ["EASY", "NORMAL", "HARD"]:
-            dif_clauses = list(where_clauses)
-            dif_clauses.append("dificuldade_partida = ?")
-            dif_clauses.append("fpm_calculado IS NOT NULL")
+            dif_clauses = list(where_clauses); dif_clauses.append("dificuldade_partida = ?"); dif_clauses.append("fpm_calculado IS NOT NULL")
             where_sql = " WHERE " + " AND ".join(dif_clauses)
             cursor.execute(f"SELECT AVG(fpm_calculado) {base_query} {where_sql}", params + [dif])
-            avg_dif = cursor.fetchone()
-            stats["averages"][f"Média ({dif.capitalize()})"] = avg_dif[0] if avg_dif and avg_dif[0] is not None else None
-
-        # Personagem mais jogado
-        top_char_clauses = list(where_clauses)
-        top_char_clauses.append("personagem_utilizado IS NOT NULL")
-        top_char_clauses.append("personagem_utilizado != ''")
-        where_sql = " WHERE " + " AND ".join(top_char_clauses)
+            stats["averages"][f"Média ({dif.capitalize()})"] = cursor.fetchone()[0]
+        top_char_clauses = list(where_clauses); top_char_clauses.append("personagem_utilizado IS NOT NULL"); top_char_clauses.append("personagem_utilizado != ''")
+        where_sql = " WHERE " + " AND ".join(top_char_clauses) if top_char_clauses else "WHERE personagem_utilizado IS NOT NULL AND personagem_utilizado != ''"
         cursor.execute(f"SELECT personagem_utilizado {base_query} {where_sql}", params)
-
         characters = [row[0] for row in cursor.fetchall()]
         if characters:
-            if character_filter and character_filter != 'all':
-                stats["summary"]["top_character"] = character_filter
-            else:
-                stats["summary"]["top_character"] = Counter(characters).most_common(1)[0][0]
-
-        # Dados para o gráfico
+            stats["summary"]["top_character"] = character_filter if character_filter and character_filter != 'all' else Counter(characters).most_common(1)[0][0]
         where_sql = " WHERE " + " AND ".join(where_clauses) if where_clauses else ""
         cursor.execute(f"SELECT data_hora, fpm_calculado {base_query} {where_sql} ORDER BY id_partida_usuario DESC LIMIT 15", params)
         stats["chart_data"] = [{"data_hora": row[0], "fpm_calculado": row[1]} for row in cursor.fetchall()]
-
         return {"success": True, "stats": stats}
-    except sqlite3.Error as e:
+    except (sqlite3.Error, IndexError) as e:
         return {"success": False, "message": f"Erro ao buscar estatísticas: {e}", "stats": {}}
 
-
-# --- PROCESSADOR DE REQUISIÇÕES ---
 
 def process_request(action=None, data_payload=None):
     """Processa uma requisição vinda do main.js, chamando a função de lógica apropriada."""
     conn = None
     try:
-        conn = setup_database() # Modificado para não precisar passar o caminho
-
+        conn = setup_database()
         action_map = {
             "get_personal_goal": get_personal_goal_logic,
             "save_personal_goal": save_personal_goal_logic,
@@ -555,31 +481,27 @@ def process_request(action=None, data_payload=None):
             "get_filtered_stats": get_filtered_stats_logic,
             "get_all_characters": get_all_characters_logic
         }
-
         logic_function = action_map.get(action)
         if logic_function:
-            # Simplificado: passa o payload para todas as funções que podem precisar dele.
             if data_payload is not None:
                  return logic_function(conn, data_payload)
             else:
                  return logic_function(conn)
         else:
             return get_personal_goal_logic(conn)
-
     except Exception as e:
         print(f"Erro no process_request: {e}", file=sys.stderr)
         return {"error": str(e), "db_path_error": str(DATABASE_PATH), "success": False}
     finally:
         if conn: conn.close()
 
-# --- PONTO DE ENTRADA DO SCRIPT ---
 
 if __name__ == "__main__":
-    # Esta inicialização de BD aqui não é estritamente necessária
-    # se toda chamada passa por process_request, mas não prejudica.
-    setup_database()
+    input_str = ""
+    # --- CORREÇÃO CRÍTICA #1 ---
+    if sys.stdin and not sys.stdin.isatty():
+        input_str = sys.stdin.read()
 
-    input_str = sys.stdin.read()
     action_to_perform = "get_personal_goal"
     payload = None
 
@@ -589,14 +511,10 @@ if __name__ == "__main__":
             action_to_perform = input_json.get("action", "get_personal_goal")
             payload = input_json.get("payload")
         except json.JSONDecodeError:
-            print(f"Erro: Input para backend.py não é JSON válido: {input_str}", file=sys.stderr)
             action_to_perform = "_invalid_json_input_"
             payload = {"raw_input": input_str}
-
-    if action_to_perform == "_invalid_json_input_":
-        result = {"success": False, "message": "Input para backend.py não era JSON válido.", "details": payload}
-    else:
-        result = process_request(action=action_to_perform, data_payload=payload)
+    
+    result = process_request(action=action_to_perform, data_payload=payload)
 
     try:
         print(json.dumps(result))
@@ -605,5 +523,9 @@ if __name__ == "__main__":
         print(json.dumps(error_result))
         print(f"Erro de serialização no backend para ação {action_to_perform}: {e}. Resultado problemático: {result}", file=sys.stderr)
 
-    sys.stdout.flush()
-    sys.stderr.flush()
+    # --- CORREÇÃO CRÍTICA #2 ---
+    # Verifica se os canais de saída existem antes de tentar usá-los.
+    if sys.stdout:
+        sys.stdout.flush()
+    if sys.stderr:
+        sys.stderr.flush()
